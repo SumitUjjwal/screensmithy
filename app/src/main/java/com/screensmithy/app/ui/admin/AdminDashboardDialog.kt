@@ -39,6 +39,7 @@ class AdminDashboardDialog : DialogFragment() {
     private var configRepository: ConfigurationRepository? = null
     private var diagnosticInspector: SystemDiagnosticInspector? = null
     private var diagnosticLogger: DiagnosticLogger? = null
+    private var policyManager: com.screensmithy.app.domain.devicepolicy.DeviceOwnerPolicyManager? = null
 
     private var onReloadContentRequested: (() -> Unit)? = null
     private var onOpenContentAdminRequested: (() -> Unit)? = null
@@ -153,8 +154,42 @@ class AdminDashboardDialog : DialogFragment() {
             }
         }
 
-        // Lock Task
-        binding.valDiagLockTask.text = snapshot.lockTaskState
+        // Lock Task & Managed Policy
+        val dpm = policyManager ?: com.screensmithy.app.data.devicepolicy.AndroidDeviceOwnerPolicyManager(context)
+        if (dpm.isDeviceOwner) {
+            binding.layoutManagedControls.visibility = View.VISIBLE
+            when (val lts = dpm.lockTaskStatus) {
+                is com.screensmithy.app.domain.devicepolicy.LockTaskStatus.Locked -> {
+                    binding.valDiagLockTask.text = "Active (Managed Device Owner Lock Task)"
+                    binding.valDiagLockTask.setTextColor(ContextCompat.getColor(context, R.color.status_success_text))
+                    binding.txtLockTaskGuidance.text = "Screen is locked by Device Owner. To exit for maintenance, press button below."
+                    binding.btnToggleLockTask.text = "🔓 Exit Lock Task Mode (Maintenance)"
+                }
+                is com.screensmithy.app.domain.devicepolicy.LockTaskStatus.Inactive -> {
+                    binding.valDiagLockTask.text = "Inactive (Eligible for Managed Lock Task)"
+                    binding.valDiagLockTask.setTextColor(ContextCompat.getColor(context, R.color.brand_accent))
+                    binding.txtLockTaskGuidance.text = "Device Owner is active. Press button below to lock display in kiosk mode."
+                    binding.btnToggleLockTask.text = "🔒 Enter Lock Task Mode"
+                }
+                is com.screensmithy.app.domain.devicepolicy.LockTaskStatus.Pinned -> {
+                    binding.valDiagLockTask.text = "Pinned (Screen Pinning)"
+                    binding.valDiagLockTask.setTextColor(ContextCompat.getColor(context, R.color.brand_accent))
+                    binding.txtLockTaskGuidance.text = "Screen pinning is active."
+                    binding.btnToggleLockTask.text = "🔒 Switch to Managed Lock Task"
+                }
+                is com.screensmithy.app.domain.devicepolicy.LockTaskStatus.Unavailable -> {
+                    binding.valDiagLockTask.text = "Allowlist Required (${lts.reason})"
+                    binding.valDiagLockTask.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+                    binding.txtLockTaskGuidance.text = "Device Owner is active, but app needs allowlisting."
+                    binding.btnToggleLockTask.text = "🔒 Allowlist & Lock Task"
+                }
+            }
+        } else {
+            binding.layoutManagedControls.visibility = View.GONE
+            binding.valDiagLockTask.text = snapshot.lockTaskState
+            binding.valDiagLockTask.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+            binding.txtLockTaskGuidance.text = "Standard Mode: Lock Task requires Device Owner provisioning (see docs/DEVICE_OWNER_SETUP.md)."
+        }
 
         // Network Link
         val net = snapshot.networkStatus
@@ -290,6 +325,65 @@ class AdminDashboardDialog : DialogFragment() {
             }
         }
 
+        // Action: Toggle Managed Lock Task Mode
+        binding.btnToggleLockTask.setOnClickListener {
+            val ctx = context ?: return@setOnClickListener
+            val act = activity ?: return@setOnClickListener
+            val dpm = policyManager ?: com.screensmithy.app.data.devicepolicy.AndroidDeviceOwnerPolicyManager(ctx)
+            if (dpm.lockTaskStatus.isLocked) {
+                diagnosticLogger?.log(
+                    LogLevel.WARN,
+                    LogCategory.KIOSK_POLICY,
+                    "Admin requested Lock Task mode exit for maintenance"
+                )
+                val result = dpm.exitLockTask(act)
+                val msg = if (result is com.screensmithy.app.domain.devicepolicy.PolicyExecutionResult.Success) {
+                    result.message
+                } else {
+                    "Failed to exit Lock Task: ${(result as com.screensmithy.app.domain.devicepolicy.PolicyExecutionResult.Failure).reason}"
+                }
+                Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+            } else {
+                diagnosticLogger?.log(
+                    LogLevel.INFO,
+                    LogCategory.KIOSK_POLICY,
+                    "Admin requested Lock Task mode entry"
+                )
+                if (!dpm.isLockTaskPermitted) {
+                    dpm.allowlistLockTaskPackages(true)
+                }
+                val result = dpm.enterLockTask(act)
+                val msg = if (result is com.screensmithy.app.domain.devicepolicy.PolicyExecutionResult.Success) {
+                    result.message
+                } else if (result is com.screensmithy.app.domain.devicepolicy.PolicyExecutionResult.NotEligible) {
+                    result.reason
+                } else {
+                    "Failed to enter Lock Task: ${(result as com.screensmithy.app.domain.devicepolicy.PolicyExecutionResult.Failure).reason}"
+                }
+                Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+            }
+            loadDiagnosticsAndSettings()
+        }
+
+        // Action: Set Persistent Home Policy
+        binding.btnTogglePersistentHome.setOnClickListener {
+            val ctx = context ?: return@setOnClickListener
+            val dpm = policyManager ?: com.screensmithy.app.data.devicepolicy.AndroidDeviceOwnerPolicyManager(ctx)
+            diagnosticLogger?.log(
+                LogLevel.INFO,
+                LogCategory.KIOSK_POLICY,
+                "Admin requested persistent Home policy application"
+            )
+            val result = dpm.setPersistentPreferredHome(true)
+            val msg = if (result is com.screensmithy.app.domain.devicepolicy.PolicyExecutionResult.Success) {
+                result.message
+            } else {
+                "Failed to set persistent Home: ${(result as com.screensmithy.app.domain.devicepolicy.PolicyExecutionResult.Failure).reason}"
+            }
+            Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+            loadDiagnosticsAndSettings()
+        }
+
         // Action: Reload Content Now
         binding.btnReloadLiveContent.setOnClickListener {
             diagnosticLogger?.log(
@@ -356,6 +450,7 @@ class AdminDashboardDialog : DialogFragment() {
             configRepository: ConfigurationRepository,
             diagnosticInspector: SystemDiagnosticInspector,
             diagnosticLogger: DiagnosticLogger,
+            policyManager: com.screensmithy.app.domain.devicepolicy.DeviceOwnerPolicyManager? = null,
             onReloadContentRequested: () -> Unit,
             onOpenContentAdminRequested: () -> Unit,
             onChangePinRequested: () -> Unit,
@@ -367,6 +462,7 @@ class AdminDashboardDialog : DialogFragment() {
                 this.configRepository = configRepository
                 this.diagnosticInspector = diagnosticInspector
                 this.diagnosticLogger = diagnosticLogger
+                this.policyManager = policyManager
                 this.onReloadContentRequested = onReloadContentRequested
                 this.onOpenContentAdminRequested = onOpenContentAdminRequested
                 this.onChangePinRequested = onChangePinRequested
