@@ -53,7 +53,18 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
 
+    // DataStore & Coroutines
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.turbine)
 }
+
