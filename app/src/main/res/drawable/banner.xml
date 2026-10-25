@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+
+    <!-- Background -->
+    <path
+        android:fillColor="#0B0F19"
+        android:pathData="M0,0 h320 v180 h-320 z" />
+
+    <!-- Subtle accent shape -->
+    <path
+        android:fillColor="#151D2E"
+        android:pathData="M16,16 h288 a12,12 0 0 1 12,12 v124 a12,12 0 0 1 -12,12 h-288 a12,12 0 0 1 -12,-12 v-124 a12,12 0 0 1 12,-12 z" />
+
+    <!-- Screen Logo in Banner -->
+    <path
+        android:fillColor="#1E293B"
+        android:pathData="M130,44 h60 a6,6 0 0 1 6,6 v30 a6,6 0 0 1 -6,6 h-60 a6,6 0 0 1 -6,-6 v-30 a6,6 0 0 1 6,-6 z" />
+    <path
+        android:fillColor="#6366F1"
+        android:pathData="M157,54 h6 v8 h-6 z" />
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M151,62 h18 a2,2 0 0 1 2,2 v3 a2,2 0 0 1 -2,2 h-18 a2,2 0 0 1 -2,-2 v-3 a2,2 0 0 1 2,-2 z" />
+    <path
+        android:fillColor="#475569"
+        android:pathData="M156,86 h8 v6 h-8 z" />
+    <path
+        android:fillColor="#334155"
+        android:pathData="M148,92 h24 a2,2 0 0 1 2,2 v2 a2,2 0 0 1 -2,2 h-24 a2,2 0 0 1 -2,-2 v-2 a2,2 0 0 1 2,-2 z" />
+
+    <!-- Cyan Accent Line -->
+    <path
+        android:fillColor="#6366F1"
+        android:pathData="M110,120 h100 v3 h-100 z" />
+</vector>

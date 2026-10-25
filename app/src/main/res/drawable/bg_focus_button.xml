@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Focused state (D-pad selection) -->
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <corners android:radius="12dp" />
+            <solid android:color="@color/focus_background" />
+            <stroke
+                android:width="3dp"
+                android:color="@color/focus_ring" />
+        </shape>
+    </item>
+    <!-- Pressed state -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <corners android:radius="12dp" />
+            <solid android:color="@color/brand_primary_variant" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/brand_accent" />
+        </shape>
+    </item>
+    <!-- Default state -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="12dp" />
+            <solid android:color="@color/surface_card" />
+            <stroke
+                android:width="1.5dp"
+                android:color="@color/surface_card_border" />
+        </shape>
+    </item>
+</selector>

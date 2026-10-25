@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+
+    <!-- Screen Frame -->
+    <path
+        android:fillColor="#1E293B"
+        android:pathData="M16,20 h64 a8,8 0 0 1 8,8 v36 a8,8 0 0 1 -8,8 h-64 a8,8 0 0 1 -8,-8 v-36 a8,8 0 0 1 8,-8 z" />
+
+    <!-- Screen Inner Display -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M20,24 h56 a4,4 0 0 1 4,4 v28 a4,4 0 0 1 -4,4 h-56 a4,4 0 0 1 -4,-4 v-28 a4,4 0 0 1 4,-4 z" />
+
+    <!-- Smithy Hammer / Anvil Accent in Center of Screen -->
+    <path
+        android:fillColor="#6366F1"
+        android:pathData="M44,32 h8 v10 h-8 z" />
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M38,42 h20 a2,2 0 0 1 2,2 v4 a2,2 0 0 1 -2,2 h-20 a2,2 0 0 1 -2,-2 v-4 a2,2 0 0 1 2,-2 z" />
+
+    <!-- Stand / Base -->
+    <path
+        android:fillColor="#475569"
+        android:pathData="M44,72 h8 v6 h-8 z" />
+    <path
+        android:fillColor="#334155"
+        android:pathData="M32,78 h32 a2,2 0 0 1 2,2 v2 a2,2 0 0 1 -2,2 h-32 a2,2 0 0 1 -2,-2 v-2 a2,2 0 0 1 2,-2 z" />
+</vector>
