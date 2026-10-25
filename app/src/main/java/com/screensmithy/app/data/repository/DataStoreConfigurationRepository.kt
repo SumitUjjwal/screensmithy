@@ -180,7 +180,13 @@ class DataStoreConfigurationRepository(
         )
 
         val keepAwake = preferences[KEY_DISPLAY_KEEP_AWAKE] ?: true
-        val displayPreferences = DisplayPreferences(keepScreenAwake = keepAwake)
+        val displayImmersive = preferences[KEY_DISPLAY_IMMERSIVE] ?: true
+        val displayPreferences = DisplayPreferences(
+            keepScreenAwake = keepAwake,
+            immersiveSticky = displayImmersive
+        )
+
+        val reloadOnNetworkRestored = preferences[KEY_RELOAD_ON_NETWORK_RESTORED] ?: true
 
         val retryPolicy = try {
             RetryPolicy(
@@ -198,7 +204,8 @@ class DataStoreConfigurationRepository(
             contentSource = contentSource,
             navigationPolicy = navigationPolicy,
             displayPreferences = displayPreferences,
-            retryPolicy = retryPolicy
+            retryPolicy = retryPolicy,
+            reloadOnNetworkRestored = reloadOnNetworkRestored
         )
     }
 
@@ -244,6 +251,8 @@ class DataStoreConfigurationRepository(
         preferences[KEY_NAV_INCLUDE_SUBDOMAINS] = config.navigationPolicy.includeSubdomains
 
         preferences[KEY_DISPLAY_KEEP_AWAKE] = config.displayPreferences.keepScreenAwake
+        preferences[KEY_DISPLAY_IMMERSIVE] = config.displayPreferences.immersiveSticky
+        preferences[KEY_RELOAD_ON_NETWORK_RESTORED] = config.reloadOnNetworkRestored
 
         preferences[KEY_RETRY_MAX_RETRIES] = config.retryPolicy.maxRetries
         preferences[KEY_RETRY_INITIAL_BACKOFF] = config.retryPolicy.initialBackoffSeconds
@@ -288,6 +297,8 @@ class DataStoreConfigurationRepository(
         val KEY_NAV_INCLUDE_SUBDOMAINS = booleanPreferencesKey("config_nav_include_subdomains")
 
         val KEY_DISPLAY_KEEP_AWAKE = booleanPreferencesKey("config_display_keep_awake")
+        val KEY_DISPLAY_IMMERSIVE = booleanPreferencesKey("config_display_immersive")
+        val KEY_RELOAD_ON_NETWORK_RESTORED = booleanPreferencesKey("config_reload_on_network_restored")
 
         val KEY_RETRY_MAX_RETRIES = intPreferencesKey("config_retry_max_retries")
         val KEY_RETRY_INITIAL_BACKOFF = intPreferencesKey("config_retry_initial_backoff")

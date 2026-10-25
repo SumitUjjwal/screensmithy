@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import app.cash.turbine.test
 import com.screensmithy.app.domain.model.ContentSource
+import com.screensmithy.app.domain.model.DisplayPreferences
 import com.screensmithy.app.domain.model.KioskConfiguration
 import com.screensmithy.app.domain.model.LocalHtmlMetadata
 import com.screensmithy.app.domain.model.NavigationMode
@@ -193,5 +194,24 @@ class DataStoreConfigurationRepositoryTest {
         val migrated = repository.getConfiguration()
         assertEquals(KioskConfiguration.CURRENT_SCHEMA_VERSION, migrated.schemaVersion)
         assertTrue(migrated.isSetupCompleted)
+    }
+
+    @Test
+    fun updateConfiguration_savesDisplayPreferencesAndReloadOnNetworkRestored() = testScope.runTest {
+        val result = repository.updateConfiguration { current ->
+            current.copy(
+                displayPreferences = DisplayPreferences(
+                    keepScreenAwake = false,
+                    immersiveSticky = false
+                ),
+                reloadOnNetworkRestored = false
+            )
+        }
+
+        assertTrue(result.isSuccess)
+        val saved = repository.getConfiguration()
+        assertFalse(saved.displayPreferences.keepScreenAwake)
+        assertFalse(saved.displayPreferences.immersiveSticky)
+        assertFalse(saved.reloadOnNetworkRestored)
     }
 }

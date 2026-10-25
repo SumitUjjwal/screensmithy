@@ -11,7 +11,8 @@ data class KioskConfiguration(
     val contentSource: ContentSource = ContentSource.None,
     val navigationPolicy: NavigationPolicy = NavigationPolicy(),
     val displayPreferences: DisplayPreferences = DisplayPreferences(),
-    val retryPolicy: RetryPolicy = RetryPolicy()
+    val retryPolicy: RetryPolicy = RetryPolicy(),
+    val reloadOnNetworkRestored: Boolean = true
 ) {
     companion object {
         const val CURRENT_SCHEMA_VERSION = 1
