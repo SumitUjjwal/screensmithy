@@ -11,4 +11,5 @@
     <string name="btn_admin_gate">Admin PIN Gate</string>
     <string name="dpad_feedback_pressed">Remote OK received! Focus &amp; input layer operational.</string>
     <string name="next_phase_hint">Phase 06: Hidden Remote Sequence &amp; Secure PIN Active</string>
+    <string name="device_admin_description">ScreenSmithy Device Administrator for dedicated Android TV digital signage and kiosk display management.</string>
 </resources>

@@ -57,6 +57,9 @@ import com.screensmithy.app.domain.state.StartupDecisionEngine
 import com.screensmithy.app.domain.state.StartupState
 import com.screensmithy.app.domain.wizard.SetupWizardManager
 import com.screensmithy.app.domain.wizard.SetupWizardSnapshot
+import com.screensmithy.app.data.devicepolicy.AndroidDeviceOwnerPolicyManager
+import com.screensmithy.app.domain.devicepolicy.DeviceOwnerPolicyManager
+import com.screensmithy.app.domain.devicepolicy.PolicyExecutionResult
 import com.screensmithy.app.domain.wizard.WizardStep
 import com.screensmithy.app.ui.admin.AdminContentDialog
 import com.screensmithy.app.ui.admin.AdminDashboardDialog
@@ -82,6 +85,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var configRepository: ConfigurationRepository
     private lateinit var startupEngine: StartupDecisionEngine
     private lateinit var deviceInfoProvider: DeviceManagementInfoProvider
+    private lateinit var policyManager: DeviceOwnerPolicyManager
     private lateinit var localHtmlImporter: LocalHtmlImporter
     private lateinit var contentController: AdminContentController
     private lateinit var wizardManager: SetupWizardManager
@@ -143,6 +147,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         deviceInfoProvider = SystemDeviceManagementInfoProvider(this)
+        policyManager = AndroidDeviceOwnerPolicyManager(this)
 
         diagnosticLogger = BoundedDiagnosticLogger()
         diagnosticInspector = AndroidSystemDiagnosticInspector(
@@ -406,6 +411,9 @@ class MainActivity : AppCompatActivity() {
                     source = config.contentSource,
                     policy = config.navigationPolicy
                 )
+
+                // Device Owner Managed Kiosk: If eligible, enter Lock Task Mode safely
+                checkAndEnterManagedLockTask()
             }
 
             is StartupState.RecoverableConfigurationError -> {
@@ -422,6 +430,17 @@ class MainActivity : AppCompatActivity() {
                 }
                 binding.btnErrorOpenAdmin.requestFocus()
             }
+        }
+    }
+
+    private fun checkAndEnterManagedLockTask() {
+        if (policyManager.canEnterLockTask()) {
+            val result = policyManager.enterLockTask(this)
+            diagnosticLogger.log(
+                if (result is PolicyExecutionResult.Success) LogLevel.INFO else LogLevel.WARN,
+                LogCategory.KIOSK_POLICY,
+                "Managed Lock Task mode on presentation: $result"
+            )
         }
     }
 
@@ -771,6 +790,7 @@ class MainActivity : AppCompatActivity() {
             configRepository = configRepository,
             diagnosticInspector = diagnosticInspector,
             diagnosticLogger = diagnosticLogger,
+            policyManager = policyManager,
             onReloadContentRequested = {
                 lifecycleScope.launch {
                     val config = configRepository.getConfiguration()

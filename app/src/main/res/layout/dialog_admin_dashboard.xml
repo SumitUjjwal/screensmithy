@@ -210,6 +210,59 @@
                     app:layout_constraintStart_toEndOf="@id/lblDiagLockTask"
                     app:layout_constraintTop_toTopOf="@id/lblDiagLockTask" />
 
+                <TextView
+                    android:id="@+id/txtLockTaskGuidance"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Standard Mode: Lock Task requires Device Owner provisioning (see docs/DEVICE_OWNER_SETUP.md)."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/lblDiagLockTask"
+                    app:layout_constraintTop_toBottomOf="@id/valDiagLockTask" />
+
+                <LinearLayout
+                    android:id="@+id/layoutManagedControls"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/lblDiagLockTask"
+                    app:layout_constraintTop_toBottomOf="@id/txtLockTaskGuidance">
+
+                    <Button
+                        android:id="@+id/btnToggleLockTask"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_focus_button"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:paddingHorizontal="14dp"
+                        android:text="🔒 Enter Lock Task Mode"
+                        android:textAllCaps="false"
+                        android:textColor="@color/brand_accent"
+                        android:textSize="12sp"
+                        app:backgroundTint="@null" />
+
+                    <Button
+                        android:id="@+id/btnTogglePersistentHome"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="12dp"
+                        android:background="@drawable/bg_focus_button"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:paddingHorizontal="14dp"
+                        android:text="🏠 Set Persistent Home"
+                        android:textAllCaps="false"
+                        android:textColor="@color/brand_accent"
+                        android:textSize="12sp"
+                        app:backgroundTint="@null" />
+                </LinearLayout>
+
                 <!-- Row 4: Network Status -->
                 <TextView
                     android:id="@+id/lblDiagNetwork"
@@ -220,7 +273,7 @@
                     android:textColor="@color/text_muted"
                     android:textSize="13sp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/valDiagLockTask" />
+                    app:layout_constraintTop_toBottomOf="@id/layoutManagedControls" />
 
                 <TextView
                     android:id="@+id/valDiagNetwork"
