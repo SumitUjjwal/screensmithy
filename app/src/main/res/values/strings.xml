@@ -6,8 +6,9 @@
     <string name="foundation_status_ready">Architecture Initialized</string>
     <string name="foundation_description">ScreenSmithy runtime established. D-pad navigation active.</string>
     <string name="btn_test_dpad">D-pad Test Button (Press OK)</string>
-    <string name="btn_demo_local_html">Demo Local HTML Kiosk</string>
-    <string name="btn_demo_remote_url">Demo Remote URL Kiosk</string>
+    <string name="btn_demo_local_html">Demo Local HTML</string>
+    <string name="btn_demo_remote_url">Demo Remote URL</string>
+    <string name="btn_admin_gate">Admin PIN Gate</string>
     <string name="dpad_feedback_pressed">Remote OK received! Focus &amp; input layer operational.</string>
-    <string name="next_phase_hint">Phase 05: Secure WebView Content Renderer Active</string>
+    <string name="next_phase_hint">Phase 06: Hidden Remote Sequence &amp; Secure PIN Active</string>
 </resources>
