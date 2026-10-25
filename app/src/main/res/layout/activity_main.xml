@@ -105,22 +105,58 @@
             app:layout_constraintTop_toBottomOf="@id/txtErrorTitle"
             tools:text="Unable to load configured content." />
 
-        <Button
-            android:id="@+id/btnErrorOpenAdmin"
-            android:layout_width="wrap_content"
-            android:layout_height="44dp"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/bg_focus_button"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:paddingHorizontal="24dp"
-            android:text="Open Admin Settings (PIN Required)"
-            android:textAllCaps="false"
-            android:textColor="@color/text_primary"
+        <TextView
+            android:id="@+id/txtErrorRecoveryStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/brand_accent"
             android:textSize="14sp"
-            app:backgroundTint="@null"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtErrorDetails" />
+            app:layout_constraintTop_toBottomOf="@id/txtErrorDetails"
+            tools:text="Retrying automatically in 15 seconds (Attempt 1 of 3)..."
+            tools:visibility="visible" />
+
+        <LinearLayout
+            android:id="@+id/layoutErrorActions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/txtErrorRecoveryStatus">
+
+            <Button
+                android:id="@+id/btnErrorRetry"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_focus_button"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:paddingHorizontal="24dp"
+                android:text="↻ Retry Loading"
+                android:textAllCaps="false"
+                android:textColor="@color/brand_accent"
+                android:textSize="14sp"
+                app:backgroundTint="@null" />
+
+            <Button
+                android:id="@+id/btnErrorOpenAdmin"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginStart="16dp"
+                android:background="@drawable/bg_focus_button"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:paddingHorizontal="24dp"
+                android:text="Open Admin Settings (PIN Required)"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                app:backgroundTint="@null" />
+        </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

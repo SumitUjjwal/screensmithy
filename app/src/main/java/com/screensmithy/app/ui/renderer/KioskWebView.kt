@@ -247,6 +247,19 @@ class KioskWebView @JvmOverloads constructor(
         secureWebChromeClient = null
     }
 
+    /**
+     * Safely tears down the crashed WebView, reclaims dead process resources,
+     * instantiates a fresh new WebView with centralized security settings,
+     * and reloads the specified or active configuration.
+     */
+    fun recoverFromRendererCrash(source: ContentSource? = null, policy: NavigationPolicy? = null) {
+        handleRendererCrash()
+        initializeWebView()
+        val targetSource = source ?: currentSource
+        val targetPolicy = policy ?: currentPolicy
+        loadContent(targetSource, targetPolicy)
+    }
+
     private fun buildAssetLoader(): WebViewAssetLoader {
         val importedHtmlDir = File(context.filesDir, LOCAL_STORAGE_DIR_NAME)
         return WebViewAssetLoader.Builder()
