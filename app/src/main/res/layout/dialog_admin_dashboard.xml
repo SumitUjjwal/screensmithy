@@ -1,0 +1,565 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/dialogDashboardRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/dialog_scrim"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:padding="24dp">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollDashboard"
+        android:layout_width="960dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/cardDashboard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card_glow"
+            android:paddingHorizontal="32dp"
+            android:paddingVertical="24dp">
+
+            <!-- Title & Badges -->
+            <TextView
+                android:id="@+id/txtDashboardTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="Admin Dashboard &amp; Diagnostics"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <LinearLayout
+                android:id="@+id/dashboardBadgeRow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/txtDashboardTitle">
+
+                <TextView
+                    android:id="@+id/badgeDashboardSession"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_status_badge"
+                    android:backgroundTint="@color/status_success_container"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp"
+                    android:text="● Active Session (5m Inactivity Timer)"
+                    android:textColor="@color/status_success_text"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/badgeDashboardOperatingMode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_status_badge"
+                    android:backgroundTint="@color/surface_card"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp"
+                    android:text="Standard Install Mode"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/badgeDashboardNetwork"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_status_badge"
+                    android:backgroundTint="@color/surface_card"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp"
+                    android:text="Network: Checking..."
+                    android:textColor="@color/brand_accent"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- SECTION 1: SYSTEM & RUNTIME DIAGNOSTICS -->
+            <TextView
+                android:id="@+id/lblDiagnosticsHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="System Diagnostics &amp; Runtime State"
+                android:textColor="@color/brand_accent"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/dashboardBadgeRow" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/boxDiagnostics"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_status_badge"
+                android:backgroundTint="@color/surface_card"
+                android:padding="16dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/lblDiagnosticsHeader">
+
+                <!-- Row 1: Operating Mode & Device Owner -->
+                <TextView
+                    android:id="@+id/lblDiagMode"
+                    android:layout_width="140dp"
+                    android:layout_height="wrap_content"
+                    android:text="Operating Mode:"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/valDiagMode"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="Standard Mode (Normal Android TV Installation)"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/lblDiagMode"
+                    app:layout_constraintTop_toTopOf="@id/lblDiagMode" />
+
+                <!-- Row 2: Default Home Launcher -->
+                <TextView
+                    android:id="@+id/lblDiagLauncher"
+                    android:layout_width="140dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Home Launcher:"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/valDiagMode" />
+
+                <TextView
+                    android:id="@+id/valDiagLauncher"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="Checking..."
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/lblDiagLauncher"
+                    app:layout_constraintTop_toTopOf="@id/lblDiagLauncher" />
+
+                <!-- Row 3: Lock Task & Device Policy -->
+                <TextView
+                    android:id="@+id/lblDiagLockTask"
+                    android:layout_width="140dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Lock Task State:"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/valDiagLauncher" />
+
+                <TextView
+                    android:id="@+id/valDiagLockTask"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="None (Not active)"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/lblDiagLockTask"
+                    app:layout_constraintTop_toTopOf="@id/lblDiagLockTask" />
+
+                <!-- Row 4: Network Status -->
+                <TextView
+                    android:id="@+id/lblDiagNetwork"
+                    android:layout_width="140dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Network Link:"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/valDiagLockTask" />
+
+                <TextView
+                    android:id="@+id/valDiagNetwork"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="Connected (Wi-Fi, Validated)"
+                    android:textColor="@color/status_success_text"
+                    android:textSize="13sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/lblDiagNetwork"
+                    app:layout_constraintTop_toTopOf="@id/lblDiagNetwork" />
+
+                <!-- Row 5: Content Source & Identifier (Sanitized) -->
+                <TextView
+                    android:id="@+id/lblDiagContent"
+                    android:layout_width="140dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Live Content:"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/valDiagNetwork" />
+
+                <TextView
+                    android:id="@+id/valDiagContent"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="middle"
+                    android:singleLine="true"
+                    android:text="https://kiosk.example.com"
+                    android:textColor="@color/brand_accent"
+                    android:textSize="13sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/lblDiagContent"
+                    app:layout_constraintTop_toTopOf="@id/lblDiagContent" />
+
+                <!-- Row 6: Setup Validity & Last Load Status -->
+                <TextView
+                    android:id="@+id/lblDiagLoadStatus"
+                    android:layout_width="140dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Last Load Result:"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/valDiagContent" />
+
+                <TextView
+                    android:id="@+id/valDiagLoadStatus"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="Success"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/lblDiagLoadStatus"
+                    app:layout_constraintTop_toTopOf="@id/lblDiagLoadStatus" />
+
+                <!-- Row 7: Device, OS, and WebView Package -->
+                <TextView
+                    android:id="@+id/lblDiagDevice"
+                    android:layout_width="140dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Device &amp; Engine:"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/valDiagLoadStatus" />
+
+                <TextView
+                    android:id="@+id/valDiagDevice"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="Android 14 | System WebView"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/lblDiagDevice"
+                    app:layout_constraintTop_toTopOf="@id/lblDiagDevice" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- SECTION 2: GENUINELY IMPLEMENTABLE SETTINGS -->
+            <TextView
+                android:id="@+id/lblSettingsHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Supported Kiosk Display &amp; Recovery Settings"
+                android:textColor="@color/brand_accent"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/boxDiagnostics" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/boxSettings"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_status_badge"
+                android:backgroundTint="@color/surface_card"
+                android:padding="16dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/lblSettingsHeader">
+
+                <!-- Setting 1: Keep Screen Awake -->
+                <LinearLayout
+                    android:id="@+id/settingRowKeepAwake"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="@id/btnToggleKeepAwake"
+                    app:layout_constraintEnd_toStartOf="@id/btnToggleKeepAwake"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/btnToggleKeepAwake">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Keep Screen Awake (FLAG_KEEP_SCREEN_ON)"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Prevents the TV display from dimming or sleeping while kiosk presentation is active."
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnToggleKeepAwake"
+                    android:layout_width="120dp"
+                    android:layout_height="42dp"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="[ ON ]"
+                    android:textAllCaps="false"
+                    android:textColor="@color/status_success_text"
+                    android:textSize="14sp"
+                    app:backgroundTint="@null"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <!-- Setting 2: Sticky Immersive Mode -->
+                <LinearLayout
+                    android:id="@+id/settingRowImmersive"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="@id/btnToggleImmersive"
+                    app:layout_constraintEnd_toStartOf="@id/btnToggleImmersive"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/btnToggleImmersive">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Sticky Immersive Mode"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Suppresses Android system status bars and navigation bars for full-screen display."
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnToggleImmersive"
+                    android:layout_width="120dp"
+                    android:layout_height="42dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="[ ON ]"
+                    android:textAllCaps="false"
+                    android:textColor="@color/status_success_text"
+                    android:textSize="14sp"
+                    app:backgroundTint="@null"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/btnToggleKeepAwake" />
+
+                <!-- Setting 3: Reload on Network Restored -->
+                <LinearLayout
+                    android:id="@+id/settingRowReloadNet"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="@id/btnToggleReloadOnNetwork"
+                    app:layout_constraintEnd_toStartOf="@id/btnToggleReloadOnNetwork"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/btnToggleReloadOnNetwork">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Reload Content When Network Restored"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Automatically reloads active remote content when network connectivity returns after an outage."
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnToggleReloadOnNetwork"
+                    android:layout_width="120dp"
+                    android:layout_height="42dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="[ ON ]"
+                    android:textAllCaps="false"
+                    android:textColor="@color/status_success_text"
+                    android:textSize="14sp"
+                    app:backgroundTint="@null"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/btnToggleImmersive" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- SECTION 3: ADMINISTRATIVE ACTIONS -->
+            <TextView
+                android:id="@+id/lblActionsHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Administrative Actions &amp; Tools"
+                android:textColor="@color/brand_accent"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/boxSettings" />
+
+            <!-- Action Buttons Grid -->
+            <LinearLayout
+                android:id="@+id/rowActions1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/lblActionsHeader">
+
+                <Button
+                    android:id="@+id/btnReloadLiveContent"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="🔄 Reload Content"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    app:backgroundTint="@null" />
+
+                <Button
+                    android:id="@+id/btnContentAdmin"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1.2"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="⚙️ Content &amp; Policy"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    app:backgroundTint="@null" />
+
+                <Button
+                    android:id="@+id/btnChangeAdminPin"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="🔒 Change PIN"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    app:backgroundTint="@null" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/rowActions2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/rowActions1">
+
+                <Button
+                    android:id="@+id/btnExportDiagnostics"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1.2"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="📄 Export Diagnostic Report"
+                    android:textAllCaps="false"
+                    android:textColor="@color/brand_accent"
+                    android:textSize="13sp"
+                    app:backgroundTint="@null" />
+
+                <Button
+                    android:id="@+id/btnViewLogs"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="📋 View Recent Logs"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    app:backgroundTint="@null" />
+            </LinearLayout>
+
+            <!-- Bottom Exit / Resume Kiosk Button -->
+            <Button
+                android:id="@+id/btnResumeKiosk"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/bg_focus_button"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:text="▶ Resume Kiosk Presentation"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                app:backgroundTint="@null"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/rowActions2" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

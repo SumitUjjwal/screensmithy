@@ -1,17 +1,28 @@
 package com.screensmithy.app
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.screensmithy.app.data.auth.DataStoreAdminAuthRepository
 import com.screensmithy.app.data.auth.adminAuthDataStore
+import com.screensmithy.app.data.diagnostics.AndroidSystemDiagnosticInspector
 import com.screensmithy.app.data.importer.AndroidContentStreamResolver
 import com.screensmithy.app.data.repository.DataStoreConfigurationRepository
 import com.screensmithy.app.data.repository.configurationDataStore
@@ -22,6 +33,13 @@ import com.screensmithy.app.domain.admin.SystemDeviceManagementInfoProvider
 import com.screensmithy.app.domain.auth.AdminAuthRepository
 import com.screensmithy.app.domain.auth.AdminSessionManager
 import com.screensmithy.app.domain.auth.RemoteSequenceDetector
+import com.screensmithy.app.domain.diagnostics.BoundedDiagnosticLogger
+import com.screensmithy.app.domain.diagnostics.DiagnosticLogger
+import com.screensmithy.app.domain.diagnostics.DiagnosticReportExporter
+import com.screensmithy.app.domain.diagnostics.LogCategory
+import com.screensmithy.app.domain.diagnostics.LogLevel
+import com.screensmithy.app.domain.diagnostics.SecretSanitizer
+import com.screensmithy.app.domain.diagnostics.SystemDiagnosticInspector
 import com.screensmithy.app.domain.importer.ImportResult
 import com.screensmithy.app.domain.importer.LocalHtmlImporter
 import com.screensmithy.app.domain.model.ContentSource
@@ -29,6 +47,7 @@ import com.screensmithy.app.domain.model.KioskConfiguration
 import com.screensmithy.app.domain.model.LocalHtmlMetadata
 import com.screensmithy.app.domain.model.NavigationMode
 import com.screensmithy.app.domain.model.NavigationPolicy
+import com.screensmithy.app.domain.model.RuntimeStatus
 import com.screensmithy.app.domain.renderer.RendererEvent
 import com.screensmithy.app.domain.renderer.RendererState
 import com.screensmithy.app.domain.repository.ConfigurationRepository
@@ -39,6 +58,7 @@ import com.screensmithy.app.domain.wizard.SetupWizardManager
 import com.screensmithy.app.domain.wizard.SetupWizardSnapshot
 import com.screensmithy.app.domain.wizard.WizardStep
 import com.screensmithy.app.ui.admin.AdminContentDialog
+import com.screensmithy.app.ui.admin.AdminDashboardDialog
 import com.screensmithy.app.ui.auth.AdminPinDialog
 import com.screensmithy.app.ui.auth.PinDialogMode
 import com.screensmithy.app.ui.importer.HtmlDocumentPickerContract
@@ -66,12 +86,25 @@ class MainActivity : AppCompatActivity() {
     private lateinit var wizardManager: SetupWizardManager
     private lateinit var sequenceDetector: RemoteSequenceDetector
 
-    // File Picker Launcher (Storage Access Framework)
+    // Diagnostics & Supported Settings
+    private lateinit var diagnosticLogger: DiagnosticLogger
+    private lateinit var diagnosticInspector: SystemDiagnosticInspector
+    private lateinit var diagnosticReportExporter: DiagnosticReportExporter
+    private var currentRuntimeStatus: RuntimeStatus = RuntimeStatus()
+
+    // File Pickers (Storage Access Framework)
     private lateinit var htmlPickerLauncher: ActivityResultLauncher<Unit>
+    private lateinit var exportDiagnosticsLauncher: ActivityResultLauncher<String>
+
+    // Network Connectivity Monitoring
+    private var connectivityManager: ConnectivityManager? = null
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var isNetworkDisconnected: Boolean = false
 
     // State Tracking
     private var isPreviewing: Boolean = false
     private var activeAdminDialog: AdminContentDialog? = null
+    private var activeDashboardDialog: AdminDashboardDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,12 +113,19 @@ class MainActivity : AppCompatActivity() {
 
         initServices()
         initFilePicker()
+        setupNetworkMonitoring()
         setupBackNavigation()
         setupWizardUiListeners()
         setupPreviewControls()
         setupErrorCard()
         observeRenderer()
         observeConfigurationAndStartup()
+
+        diagnosticLogger.log(
+            LogLevel.INFO,
+            LogCategory.STARTUP,
+            "ScreenSmithy cold started"
+        )
     }
 
     private fun initServices() {
@@ -102,6 +142,15 @@ class MainActivity : AppCompatActivity() {
         )
 
         deviceInfoProvider = SystemDeviceManagementInfoProvider(this)
+
+        diagnosticLogger = BoundedDiagnosticLogger()
+        diagnosticInspector = AndroidSystemDiagnosticInspector(
+            context = applicationContext,
+            configRepository = configRepository,
+            deviceManagementInfoProvider = deviceInfoProvider,
+            runtimeStatusProvider = { currentRuntimeStatus }
+        )
+        diagnosticReportExporter = DiagnosticReportExporter()
 
         localHtmlImporter = LocalHtmlImporter(
             appFilesDir = filesDirectory,
@@ -122,6 +171,11 @@ class MainActivity : AppCompatActivity() {
         )
 
         sequenceDetector = RemoteSequenceDetector {
+            diagnosticLogger.log(
+                LogLevel.INFO,
+                LogCategory.AUTH,
+                "Hidden remote sequence detected"
+            )
             triggerAdminPinGate()
         }
     }
@@ -131,6 +185,84 @@ class MainActivity : AppCompatActivity() {
             if (uri != null) {
                 handleHtmlDocumentPicked(uri)
             }
+        }
+
+        exportDiagnosticsLauncher = registerForActivityResult(
+            ActivityResultContracts.CreateDocument("application/json")
+        ) { uri: Uri? ->
+            if (uri != null) {
+                lifecycleScope.launch {
+                    try {
+                        val snapshot = diagnosticInspector.inspect()
+                        val logs = diagnosticLogger.getRecentLogs()
+                        contentResolver.openOutputStream(uri)?.use { stream ->
+                            diagnosticReportExporter.exportToStream(snapshot, logs, stream)
+                        }
+                        diagnosticLogger.log(
+                            LogLevel.INFO,
+                            LogCategory.CONFIG,
+                            "Diagnostic report successfully exported to SAF URI"
+                        )
+                        Toast.makeText(this@MainActivity, "Diagnostic report exported successfully", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        diagnosticLogger.log(
+                            LogLevel.ERROR,
+                            LogCategory.CONFIG,
+                            "Failed to export diagnostic report: ${e.message}"
+                        )
+                        Toast.makeText(this@MainActivity, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setupNetworkMonitoring() {
+        connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                diagnosticLogger.log(
+                    LogLevel.INFO,
+                    LogCategory.NETWORK,
+                    "Network connectivity established"
+                )
+                if (isNetworkDisconnected) {
+                    isNetworkDisconnected = false
+                    lifecycleScope.launch {
+                        val config = configRepository.getConfiguration()
+                        if (config.reloadOnNetworkRestored && config.isSetupCompleted && !isPreviewing) {
+                            diagnosticLogger.log(
+                                LogLevel.INFO,
+                                LogCategory.NETWORK,
+                                "Network restored; reloading active kiosk content"
+                            )
+                            binding.kioskWebView.loadContent(config.contentSource, config.navigationPolicy)
+                        }
+                    }
+                }
+            }
+
+            override fun onLost(network: Network) {
+                isNetworkDisconnected = true
+                diagnosticLogger.log(
+                    LogLevel.WARN,
+                    LogCategory.NETWORK,
+                    "Network connectivity lost"
+                )
+            }
+        }
+
+        val request = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+        try {
+            connectivityManager?.registerNetworkCallback(request, networkCallback!!)
+        } catch (e: Exception) {
+            diagnosticLogger.log(
+                LogLevel.WARN,
+                LogCategory.NETWORK,
+                "Could not register network callback: ${e.message}"
+            )
         }
     }
 
@@ -213,6 +345,15 @@ class MainActivity : AppCompatActivity() {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        if (config.displayPreferences.immersiveSticky) {
+            insetsController.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            insetsController.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            insetsController.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 
@@ -572,13 +713,27 @@ class MainActivity : AppCompatActivity() {
                 authRepository = authRepository,
                 sessionManager = sessionManager,
                 onAuthenticated = {
-                    openAdminContentDialog()
+                    diagnosticLogger.log(
+                        LogLevel.INFO,
+                        LogCategory.AUTH,
+                        "Admin authenticated via remote sequence"
+                    )
+                    openAdminDashboardDialog()
                 },
                 onPinSetupCompleted = {
-                    openAdminContentDialog()
+                    diagnosticLogger.log(
+                        LogLevel.INFO,
+                        LogCategory.AUTH,
+                        "Admin PIN setup completed"
+                    )
+                    openAdminDashboardDialog()
                 },
                 onCancelled = {
-                    // Restores focus to active screen
+                    diagnosticLogger.log(
+                        LogLevel.INFO,
+                        LogCategory.AUTH,
+                        "Admin authentication cancelled"
+                    )
                 }
             )
 
@@ -596,6 +751,48 @@ class MainActivity : AppCompatActivity() {
             }
         )
         pinDialog.show(supportFragmentManager, AdminPinDialog.TAG)
+    }
+
+    private fun openAdminDashboardDialog() {
+        val dialog = AdminDashboardDialog.newInstance(
+            configRepository = configRepository,
+            diagnosticInspector = diagnosticInspector,
+            diagnosticLogger = diagnosticLogger,
+            onReloadContentRequested = {
+                lifecycleScope.launch {
+                    val config = configRepository.getConfiguration()
+                    binding.kioskWebView.loadContent(config.contentSource, config.navigationPolicy)
+                }
+            },
+            onOpenContentAdminRequested = {
+                openAdminContentDialog()
+            },
+            onChangePinRequested = {
+                launchPinSetupDialog {
+                    openAdminDashboardDialog()
+                }
+            },
+            onExportDiagnosticsRequested = {
+                exportDiagnosticsLauncher.launch("screensmithy-diagnostic-report-${System.currentTimeMillis()}.json")
+            },
+            onResumeKioskRequested = {
+                // Focus resumes to presentation
+            },
+            onDismissed = {
+                activeDashboardDialog = null
+                // If not previewing, refresh presentation state
+                if (!isPreviewing) {
+                    lifecycleScope.launch {
+                        val config = configRepository.getConfiguration()
+                        val state = startupEngine.evaluate(config)
+                        handleStartupState(state, config)
+                    }
+                }
+            }
+        )
+
+        activeDashboardDialog = dialog
+        dialog.show(supportFragmentManager, AdminDashboardDialog.TAG)
     }
 
     private fun openAdminContentDialog() {
@@ -639,17 +836,88 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             binding.kioskWebView.state.collectLatest { state ->
                 when (state) {
+                    is RendererState.Loading -> {
+                        currentRuntimeStatus = currentRuntimeStatus.copy(
+                            lastLoadAttemptEpochMs = System.currentTimeMillis()
+                        )
+                    }
+                    is RendererState.Ready -> {
+                        currentRuntimeStatus = currentRuntimeStatus.copy(
+                            lastLoadSuccess = true,
+                            lastErrorMessage = null
+                        )
+                        diagnosticLogger.log(
+                            LogLevel.INFO,
+                            LogCategory.RENDERER,
+                            "Content loaded successfully: ${SecretSanitizer.sanitizeUrl(state.url)}"
+                        )
+                    }
                     is RendererState.MainFrameError -> {
+                        val sanitizedDesc = SecretSanitizer.sanitizeMessage(state.description)
+                        currentRuntimeStatus = currentRuntimeStatus.copy(
+                            lastLoadSuccess = false,
+                            lastErrorMessage = "[${state.errorCode}] $sanitizedDesc"
+                        )
+                        diagnosticLogger.log(
+                            LogLevel.ERROR,
+                            LogCategory.RENDERER,
+                            "Main frame load error [${state.errorCode}]: $sanitizedDesc"
+                        )
                         if (isPreviewing) {
                             contentController.reportRendererFailure("Preview Error [${state.errorCode}]: ${state.description}")
                         }
                     }
+                    is RendererState.HttpError -> {
+                        currentRuntimeStatus = currentRuntimeStatus.copy(
+                            lastLoadSuccess = false,
+                            lastErrorMessage = "HTTP ${state.statusCode}: ${state.reasonPhrase}"
+                        )
+                        diagnosticLogger.log(
+                            LogLevel.WARN,
+                            LogCategory.RENDERER,
+                            "HTTP error [${state.statusCode}] on ${SecretSanitizer.sanitizeUrl(state.failingUrl)}"
+                        )
+                        if (isPreviewing) {
+                            contentController.reportRendererFailure("Preview HTTP Error [${state.statusCode}]")
+                        }
+                    }
                     is RendererState.TlsError -> {
+                        currentRuntimeStatus = currentRuntimeStatus.copy(
+                            lastLoadSuccess = false,
+                            lastErrorMessage = "TLS Error: ${state.errorDescription}"
+                        )
+                        diagnosticLogger.log(
+                            LogLevel.ERROR,
+                            LogCategory.RENDERER,
+                            "TLS Error: ${state.errorDescription}"
+                        )
                         if (isPreviewing) {
                             contentController.reportRendererFailure("Preview TLS Error: ${state.errorDescription}")
                         }
                     }
-                    else -> Unit
+                    is RendererState.MissingLocalContent -> {
+                        currentRuntimeStatus = currentRuntimeStatus.copy(
+                            lastLoadSuccess = false,
+                            lastErrorMessage = "Missing file: ${state.relativePath}"
+                        )
+                        diagnosticLogger.log(
+                            LogLevel.ERROR,
+                            LogCategory.RENDERER,
+                            "Missing local file: ${state.relativePath}"
+                        )
+                    }
+                    is RendererState.RendererCrash -> {
+                        currentRuntimeStatus = currentRuntimeStatus.copy(
+                            lastLoadSuccess = false,
+                            lastErrorMessage = "Renderer process terminated"
+                        )
+                        diagnosticLogger.log(
+                            LogLevel.ERROR,
+                            LogCategory.RENDERER,
+                            "Renderer process terminated (didCrash=${state.didCrash})"
+                        )
+                    }
+                    is RendererState.Idle -> Unit
                 }
             }
         }
@@ -658,11 +926,31 @@ class MainActivity : AppCompatActivity() {
             binding.kioskWebView.events.collect { event ->
                 when (event) {
                     is RendererEvent.NavigationBlocked -> {
+                        val sanitizedUrl = SecretSanitizer.sanitizeUrl(event.targetUrl)
+                        diagnosticLogger.log(
+                            LogLevel.WARN,
+                            LogCategory.KIOSK_POLICY,
+                            "Navigation blocked by policy: $sanitizedUrl (reason: ${event.reason})"
+                        )
                         if (isPreviewing) {
-                            contentController.reportRendererFailure("Navigation blocked by policy: ${event.targetUrl}")
+                            contentController.reportRendererFailure("Navigation blocked by policy: $sanitizedUrl")
                         }
                     }
-                    else -> Unit
+                    is RendererEvent.ExternalAppLaunchBlocked -> {
+                        val sanitizedUrl = SecretSanitizer.sanitizeUrl(event.targetUrl)
+                        diagnosticLogger.log(
+                            LogLevel.WARN,
+                            LogCategory.KIOSK_POLICY,
+                            "External app launch blocked: $sanitizedUrl"
+                        )
+                    }
+                    is RendererEvent.TitleReceived -> {
+                        diagnosticLogger.log(
+                            LogLevel.INFO,
+                            LogCategory.RENDERER,
+                            "Document title received: ${event.title}"
+                        )
+                    }
                 }
             }
         }
@@ -677,6 +965,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        try {
+            networkCallback?.let { connectivityManager?.unregisterNetworkCallback(it) }
+        } catch (_: Exception) {}
         binding.kioskWebView.destroyRenderer()
     }
 }
