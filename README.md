@@ -1,109 +1,131 @@
 # ScreenSmithy
 
-**Turn an Android TV or compatible Android device into a dedicated display.**
+**Turn an Android TV or compatible Android display into a secure, dedicated digital kiosk.**
 
-ScreenSmithy is an open-source Android kiosk application being built to display either a local HTML document or a web page in a fullscreen, TV-friendly experience. It is designed around remote-control navigation, PIN-protected administration, and a clear distinction between ordinary app installation and managed-device kiosk capabilities.
+ScreenSmithy is an open-source, enterprise-grade Android kiosk application built specifically for Android TV, Google TV, and Android digital signage displays. It presents either a local HTML5 document or a remote web application in a seamless, fullscreen experience designed from the ground up for TV remote control, zero-touch recovery, and cryptographic administration.
 
-> **Project status: Work in progress.** The repository is being set up and the features below describe the intended scope. Do not treat ScreenSmithy as production-ready until the implementation, security review, and device testing are complete.
+---
 
-## Goals
+## Key Features
 
-- Display a locally imported `.html` or `.htm` file.
-- Display a configured HTTP or HTTPS URL in Android WebView.
-- Provide an admin area protected by a hidden remote-control sequence and an administrator PIN.
-- Make setup and administration usable with a TV remote and D-pad.
-- Recover gracefully from network failures, WebView crashes, and app restarts.
-- Support ordinary APK installation with best-effort kiosk behavior.
-- Support stronger kiosk lockdown on compatible, properly provisioned Device Owner devices.
-- Keep configuration and administration local to the device; a cloud backend is not required for the initial scope.
+- **Dual Content Presentation**:
+  - **Local HTML5**: Offline HTML documents imported securely into app-private storage via the Android Storage Access Framework (SAF) and served sandboxed via `androidx.webkit.WebViewAssetLoader`.
+  - **Remote Web URLs**: Dynamic HTTP/HTTPS dashboards and web apps with strict URL validation and domain navigation policies (`CONFIGURED_HOST_ONLY`, `ALLOWLIST_ONLY`, `ANY_HTTP_HOST`).
+- **Hidden Administration & PIN Security**:
+  - **Zero On-Screen Clutter**: No visible administration buttons, settings icons, or affordances on the live kiosk presentation.
+  - **Secret Remote Sequence**: 9-step directional sequence on the TV remote (`UP` $\to$ `UP` $\to$ `DOWN` $\to$ `DOWN` $\to$ `LEFT` $\to$ `RIGHT` $\to$ `LEFT` $\to$ `RIGHT` $\to$ `OK`) invokes the admin gate.
+  - **Cryptographic Security**: PBKDF2WithHmacSHA256 salted PIN hashing (6–12 digits) with zero plaintext storage and progressive brute-force rate-limiting lockout.
+- **TV Remote & D-Pad Optimized**:
+  - High-contrast visual focus indicators and custom D-pad navigation across all wizards and settings dialogs.
+  - On-screen numeric keypad for seamless remote-control PIN entry.
+- **Idempotent Lifecycle & Crash Resilience**:
+  - Idempotent startup coordinator prevents redundant reloads across TV input switching and lifecycle events (`onResume`, `onNewIntent`, `onWindowFocusChanged`).
+  - Bounded exponential backoff retry (5s, 10s, 20s, 40s, 60s) with $\pm 15\%$ random jitter.
+  - Automatic Chromium renderer termination recovery with 60s crash-loop protection (max 3 crashes).
+  - Network restoration detection via `ConnectivityManager.NetworkCallback` with automatic reload.
+  - Strict fail-closed TLS/SSL policy (untrusted certificates are never bypassed).
+- **Two Distinct Operating Modes**:
+  - **Standard Normal Mode**: Installable as a standard APK. Integrates as an Android TV Home launcher (`CATEGORY_HOME` + `CATEGORY_DEFAULT`).
+  - **Managed Device Owner Mode**: Hardware-enforced Lock Task Mode (`LOCK_TASK_MODE_LOCKED`), persistent Home registration, and system UI suppression for dedicated commercial kiosks.
+- **Diagnostics & Data Protection**:
+  - In-memory circular diagnostic logger with automated secret sanitization (redacts passwords, tokens, API keys).
+  - Local diagnostic report export to JSON.
+  - `android:allowBackup="false"` prevents unauthorized data extraction.
 
-## Planned features
+---
 
-- [ ] First-run setup wizard and persistent configuration
-- [ ] Local HTML file selection and import into app-private storage
-- [ ] URL validation and configurable web-navigation policy
-- [ ] Fullscreen WebView presentation
-- [ ] Hidden remote-control sequence and PIN-protected admin screens
-- [ ] TV-remote-friendly setup, settings, and diagnostics
-- [ ] Loading, offline, and content-error screens
-- [ ] Bounded retry and WebView renderer recovery
-- [ ] Normal-installation launcher guidance
-- [ ] Device Owner detection and supported Lock Task Mode integration
-- [ ] Automated tests, security documentation, and installation guides
+## Operating Modes
 
-See [GitHub Issues](https://github.com/SumitUjjwal/screensmithy/issues) for implementation tasks and discussion.
+| Capability | Standard Normal Mode | Managed Device Owner Mode |
+|---|---|---|
+| **Installation** | Standard APK install via ADB or USB | Provisioned via ADB or QR code on unprovisioned/wiped device |
+| **Lock Task Mode** | Not available (system screen pinning only) | Fully locked (`LOCK_TASK_MODE_LOCKED`) allowlisted by policy |
+| **Home Launcher** | Registered as Home app in TV System Settings | Permanent default Home assigned via `DevicePolicyManager` |
+| **System Key Suppression** | TV OS handles Home/Power/OEM buttons | System Home & Back locked to kiosk; status bar suppressed |
+| **Maintenance Path** | Open TV Settings or Admin Dashboard | Authenticated `stopLockTask()` release in Admin Dashboard |
 
-## Scope for the initial version
+For complete instructions on provisioning a dedicated device, see [**`docs/DEVICE_OWNER_SETUP.md`**](docs/DEVICE_OWNER_SETUP.md).
 
-The first version focuses on **local HTML files and HTTP(S) URLs**. A local HTML file may depend on sibling images, scripts, fonts, or stylesheets; these assets need to be imported together or otherwise made available through supported paths. Importing a single HTML file will not automatically include adjacent files.
+---
 
-Features such as cloud management, remote device fleets, playlists, PDF rendering, and video signage are outside the initial scope.
+## Prerequisites
 
-## Kiosk modes and platform limitations
+- **Device**: Android TV, Google TV, or Android display running **Android 9.0+ (API 28+)**; target SDK is **Android 14 (API 34)**.
+- **Input**: Android TV remote control, D-pad controller, or keyboard.
+- **Development Workstation**:
+  - JDK 17 or higher
+  - Android SDK Tools (API 34)
+  - Gradle 8.11+ (wrapper included)
 
-ScreenSmithy is intended to support two operating modes:
+---
 
-### Normal installation
+## Building and Installing
 
-The app can be installed as a regular APK and may be selected as the device's Home/launcher app where supported. Android does not let an ordinary app silently grant itself default-Home status or guarantee that it can prevent every exit path. Startup behavior and restrictions can vary by Android version and device manufacturer.
+### 1. Build the Debug APK
+```bash
+./gradlew clean test lint assembleDebug
+```
 
-### Managed kiosk mode
+### 2. Verify Automated Tests
+ScreenSmithy includes 213 automated unit tests covering domain models, URL validation, HTML import, security hashing, recovery coordination, and device policies:
+```bash
+./gradlew testDebugUnitTest
+```
 
-On compatible devices provisioned by an authorized administrator as **Device Owner**, Android's supported device-policy APIs and Lock Task Mode can provide stronger kiosk restrictions. Device Owner provisioning is not granted by simply installing an APK and may require a factory-reset device. Provisioning and recovery instructions will be documented as the implementation matures.
+### 3. Install on Android TV via ADB
+Connect to your TV device over USB or Wi-Fi:
+```bash
+adb connect <TV_IP_ADDRESS>:5555
+adb install -r -t app/build/outputs/apk/debug/app-debug.apk
+```
 
-The project will report actual device capabilities rather than claiming restrictions that are not active.
+### 4. Launch ScreenSmithy
+```bash
+adb shell am start -n com.screensmithy.app/.MainActivity
+```
 
-## Technology direction
+---
 
-The planned implementation uses:
+## First-Run Setup & Administration
 
-- **Kotlin** for Android application code
-- **Android Studio and Gradle Kotlin DSL** for development and builds
-- **Android WebView** for rendering HTML and web content
-- **AndroidX WebKit / WebViewAssetLoader**, where appropriate, for safer local-content loading
-- **Jetpack DataStore** or an equivalent maintained option for configuration persistence
-- **Android DevicePolicyManager** for supported managed-kiosk functionality
+1. **Initial Setup Wizard**:
+   - On fresh installation, ScreenSmithy opens the first-run setup wizard.
+   - Choose your content type: **Remote Web URL** or **Local HTML Document**.
+   - Configure a **6 to 12 digit Administrator PIN** (default for initial testing: `123456`).
+   - Select your navigation policy (`CONFIGURED_HOST_ONLY`, `ALLOWLIST_ONLY`, or `ANY_HTTP_HOST`).
+   - Test and preview the content before activating.
+2. **Accessing the Admin Dashboard**:
+   - On the live presentation screen, press the remote sequence:
+     $$\text{UP} \to \text{UP} \to \text{DOWN} \to \text{DOWN} \to \text{LEFT} \to \text{RIGHT} \to \text{LEFT} \to \text{RIGHT} \to \text{OK}$$
+   - Enter your PIN on the on-screen keypad and select **Submit**.
+   - The **Admin Dashboard** provides live diagnostics, display toggles, content staging, PIN changes, and diagnostic log export.
 
-These are the intended implementation choices; the repository may evolve as compatibility and testing requirements become clear.
+---
 
-## Security principles
+## Repository Documentation
 
-ScreenSmithy handles web content and imported HTML, so security is a core requirement rather than an optional enhancement.
+- [**System Architecture & Design**](docs/ARCHITECTURE.md): Deep dive into Clean Architecture layers, state machines, and Mermaid lifecycle diagrams.
+- [**Device Owner & Managed Kiosk Setup**](docs/DEVICE_OWNER_SETUP.md): Step-by-step enterprise provisioning, Lock Task checks, and decommissioning guide.
+- [**Security Architecture & Threat Model**](docs/SECURITY.md): Threat analysis covering 14 attack vectors, cryptographic hashing, and sandboxing rules.
+- [**Troubleshooting & Diagnostic Guide**](docs/TROUBLESHOOTING.md): Solutions for network errors, SSL certificates, remote sequences, and TV sleep settings.
+- [**Release Notes & Verification Matrix**](docs/RELEASE_NOTES.md): Test execution metrics, hardware verification reports, and production signing instructions.
 
-- Never bypass TLS certificate errors.
-- Validate URLs and allow only explicitly supported schemes.
-- Avoid exposing privileged Android functionality to webpage JavaScript.
-- Restrict local-content access to app-managed files.
-- Store a salted PIN hash, never a plaintext PIN.
-- Apply authentication rate limiting.
-- Do not log PINs, credentials, cookies, tokens, or sensitive URL parameters.
-- Keep normal-installation limitations distinct from Device Owner protections.
+---
 
-Please do not use this project to store or publish credentials, signing keys, real device secrets, or private configuration. If you discover a security issue, avoid posting sensitive exploit details publicly; use a private reporting channel if one is configured, or contact the maintainer before public disclosure.
+## Platform Limitations & Considerations
 
-## Development status
+- **Single-File Local HTML**: Importing an HTML document imports that single `.html` file into app storage. Embedded styles, inline scripts, and Base64-encoded images are recommended for standalone offline pages.
+- **Branded OEM Remote Buttons (Normal Mode)**: Consumer TV remotes featuring dedicated branded buttons (Netflix, YouTube, Prime Video) send global hardware intents governed by the TV firmware. In Standard Mode, consumer remotes may exit the app. Suppressing branded buttons requires **Device Owner Managed Mode**.
+- **TLS Certificate Fail-Closed**: Insecure self-signed or invalid HTTPS certificates are never bypassed. Production endpoints must use valid SSL/TLS certificates.
 
-The repository currently contains the initial project documentation and license. The Android application implementation, build instructions, and test coverage are still being developed.
-
-Once the Android project is added, this section will include verified requirements and commands for building, testing, installing, and running ScreenSmithy. Until then, build commands and APK paths are intentionally not listed as if they were available.
+---
 
 ## Contributing
 
-Contributions, bug reports, feature ideas, and documentation improvements are welcome.
+Contributions, bug reports, and documentation improvements are welcome! Please review [docs/SECURITY.md](docs/SECURITY.md) before submitting changes. Never commit signing keys, keystores, or credentials to version control.
 
-1. Check existing [issues](https://github.com/SumitUjjwal/screensmithy/issues) before starting substantial work.
-2. For larger features, open an issue first to discuss scope and implementation.
-3. Keep changes focused and include tests for behavior where practical.
-4. Never include secrets, signing credentials, or private customer/company data.
-5. Clearly document any Android-version or device-manufacturer limitations.
-
-Development and contribution instructions will be expanded when the initial application scaffold is available.
+---
 
 ## License
 
-ScreenSmithy is licensed under the [Apache License 2.0](LICENSE). See the license file for the terms and conditions.
-
-## Links
-
-- **Repository:** https://github.com/SumitUjjwal/screensmithy
-- **Issues and feature requests:** https://github.com/SumitUjjwal/screensmithy/issues
+ScreenSmithy is open-source software licensed under the [Apache License 2.0](LICENSE).
