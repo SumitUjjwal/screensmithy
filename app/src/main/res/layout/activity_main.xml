@@ -2,245 +2,125 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_dark"
-    android:padding="32dp"
     tools:context=".MainActivity">
 
-    <!-- Central Foundation Card -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/cardFoundation"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="@drawable/bg_card_glow"
-        android:padding="32dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintWidth_percent="0.75">
-
-        <!-- Logo -->
-        <ImageView
-            android:id="@+id/imgLogo"
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/ic_smithy_logo"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <!-- Title -->
-        <TextView
-            android:id="@+id/txtAppTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:fontFamily="sans-serif-medium"
-            android:text="@string/app_name"
-            android:textColor="@color/text_primary"
-            android:textSize="32sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/imgLogo" />
-
-        <!-- Subtitle -->
-        <TextView
-            android:id="@+id/txtSubtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/app_subtitle"
-            android:textColor="@color/brand_accent"
-            android:textSize="16sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtAppTitle" />
-
-        <!-- Status Badge -->
-        <LinearLayout
-            android:id="@+id/statusBadge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/bg_status_badge"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="6dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtSubtitle">
-
-            <View
-                android:layout_width="8dp"
-                android:layout_height="8dp"
-                android:background="@drawable/bg_status_badge"
-                android:backgroundTint="@color/status_success" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:fontFamily="sans-serif-medium"
-                android:text="@string/foundation_status_ready"
-                android:textColor="@color/status_success_text"
-                android:textSize="13sp" />
-        </LinearLayout>
-
-        <!-- Description -->
-        <TextView
-            android:id="@+id/txtDescription"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center"
-            android:text="@string/foundation_description"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/statusBadge" />
-
-        <!-- Buttons Container for Remote Navigation -->
-        <LinearLayout
-            android:id="@+id/buttonContainer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:gravity="center"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtDescription">
-
-            <!-- TV Remote D-Pad Test Button -->
-            <Button
-                android:id="@+id/btnTestDpad"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:background="@drawable/bg_focus_button"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:paddingHorizontal="20dp"
-                android:paddingVertical="12dp"
-                android:text="@string/btn_test_dpad"
-                android:textAllCaps="false"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                app:backgroundTint="@null" />
-
-            <!-- Demo Local HTML Button -->
-            <Button
-                android:id="@+id/btnDemoLocalHtml"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:background="@drawable/bg_focus_button"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:paddingHorizontal="20dp"
-                android:paddingVertical="12dp"
-                android:text="@string/btn_demo_local_html"
-                android:textAllCaps="false"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                app:backgroundTint="@null" />
-
-            <!-- Demo Remote URL Button -->
-            <Button
-                android:id="@+id/btnDemoRemoteUrl"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:background="@drawable/bg_focus_button"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:paddingHorizontal="20dp"
-                android:paddingVertical="12dp"
-                android:text="@string/btn_demo_remote_url"
-                android:textAllCaps="false"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                app:backgroundTint="@null" />
-
-            <!-- Admin PIN Gate Button -->
-            <Button
-                android:id="@+id/btnAdminGate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_focus_button"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:paddingHorizontal="20dp"
-                android:paddingVertical="12dp"
-                android:text="@string/btn_admin_gate"
-                android:textAllCaps="false"
-                android:textColor="@color/brand_accent"
-                android:textSize="14sp"
-                app:backgroundTint="@null" />
-        </LinearLayout>
-
-        <!-- Dynamic Feedback Text -->
-        <TextView
-            android:id="@+id/txtFeedback"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center"
-            android:textColor="@color/brand_accent"
-            android:textSize="13sp"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/buttonContainer"
-            tools:text="D-pad OK Pressed"
-            tools:visibility="visible" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <!-- Bottom Next Phase Hint -->
-    <TextView
-        android:id="@+id/txtNextPhase"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/next_phase_hint"
-        android:textColor="@color/text_muted"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <!-- Phase 05 Secure KioskWebView Fullscreen Overlay -->
+    <!-- 1. Fullscreen Kiosk WebView Renderer (Presentation Screen) -->
+    <!-- Notice: When visible, NO admin buttons are shown on screen. Admin gate is hidden remote sequence. -->
     <com.screensmithy.app.ui.renderer.KioskWebView
         android:id="@+id/kioskWebView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!-- 2. Candidate Preview Control Bar (Visible only when Previewing) -->
+    <LinearLayout
+        android:id="@+id/previewBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#D90F172A"
+        android:elevation="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="12dp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible">
+
+        <TextView
+            android:id="@+id/txtPreviewTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-medium"
+            android:text="👁 PREVIEW MODE — Content verification in progress"
+            android:textColor="@color/brand_accent"
+            android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/btnExitPreview"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_focus_button"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:paddingHorizontal="16dp"
+            android:text="Exit Preview"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"
+            app:backgroundTint="@null" />
+    </LinearLayout>
+
+    <!-- 3. Setup Wizard Overlay Container (Visible during first run or when setup required) -->
+    <include
+        android:id="@+id/includeSetupWizard"
+        layout="@layout/view_setup_wizard"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
         tools:visibility="gone" />
 
-    <!-- Close Demo Button (Visible when KioskWebView is active) -->
-    <Button
-        android:id="@+id/btnCloseDemo"
-        android:layout_width="wrap_content"
+    <!-- 4. Recoverable Configuration Error Card (Visible when configuration cannot be presented) -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cardError"
+        android:layout_width="720dp"
         android:layout_height="wrap_content"
-        android:layout_margin="24dp"
-        android:background="@drawable/bg_focus_button"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp"
-        android:text="Back to Dashboard"
-        android:textAllCaps="false"
-        android:textColor="@color/text_primary"
-        android:textSize="13sp"
+        android:background="@drawable/bg_card_glow"
+        android:padding="32dp"
         android:visibility="gone"
-        app:backgroundTint="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:visibility="gone" />
+        tools:visibility="gone">
+
+        <TextView
+            android:id="@+id/txtErrorTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="Configuration Error"
+            android:textColor="@color/status_error_text"
+            android:textSize="24sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/txtErrorDetails"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/txtErrorTitle"
+            tools:text="Unable to load configured content." />
+
+        <Button
+            android:id="@+id/btnErrorOpenAdmin"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_focus_button"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:paddingHorizontal="24dp"
+            android:text="Open Admin Settings (PIN Required)"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            app:backgroundTint="@null"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/txtErrorDetails" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
