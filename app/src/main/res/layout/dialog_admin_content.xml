@@ -1,0 +1,485 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/dialogAdminRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/dialog_scrim"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:padding="24dp">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollAdminContent"
+        android:layout_width="920dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/cardAdmin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card_glow"
+            android:paddingHorizontal="32dp"
+            android:paddingVertical="24dp">
+
+            <!-- Title & Badges -->
+            <TextView
+                android:id="@+id/txtAdminTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="Kiosk Content Administration"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <LinearLayout
+                android:id="@+id/badgeRow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/txtAdminTitle">
+
+                <TextView
+                    android:id="@+id/badgeSession"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_status_badge"
+                    android:backgroundTint="@color/status_success_container"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp"
+                    android:text="● Active Session (5m Inactivity Timer)"
+                    android:textColor="@color/status_success_text"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/badgeDeviceMode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_status_badge"
+                    android:backgroundTint="@color/surface_card"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp"
+                    android:text="Standard Install Mode"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Active Content Summary Box -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/boxActiveContent"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_status_badge"
+                android:backgroundTint="@color/surface_card"
+                android:padding="14dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/badgeRow">
+
+                <TextView
+                    android:id="@+id/lblActiveContent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Currently Live in Kiosk:"
+                    android:textColor="@color/brand_accent"
+                    android:textSize="13sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/txtActiveContentSummary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="12dp"
+                    android:ellipsize="middle"
+                    android:singleLine="true"
+                    android:text="None"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    app:layout_constraintEnd_toStartOf="@id/btnReloadActive"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/lblActiveContent" />
+
+                <Button
+                    android:id="@+id/btnReloadActive"
+                    android:layout_width="wrap_content"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:paddingHorizontal="14dp"
+                    android:text="Reload Live"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    app:backgroundTint="@null"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Source Type Switcher Tabs -->
+            <TextView
+                android:id="@+id/lblConfigureContent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Configure Replacement Content:"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/boxActiveContent" />
+
+            <LinearLayout
+                android:id="@+id/rowTypeSelector"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/lblConfigureContent">
+
+                <Button
+                    android:id="@+id/tabRemoteUrl"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="Remote Web URL"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    app:backgroundTint="@null" />
+
+                <Button
+                    android:id="@+id/tabLocalHtml"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="Local HTML File"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    app:backgroundTint="@null" />
+            </LinearLayout>
+
+            <!-- Replacement Content Panels Container -->
+            <FrameLayout
+                android:id="@+id/panelContentContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/rowTypeSelector">
+
+                <!-- Remote URL Panel -->
+                <LinearLayout
+                    android:id="@+id/panelRemoteUrl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <EditText
+                        android:id="@+id/editRemoteUrl"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_input_field"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:hint="https://kiosk.example.com/"
+                        android:imeOptions="actionDone"
+                        android:inputType="textUri"
+                        android:paddingHorizontal="14dp"
+                        android:singleLine="true"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:textSize="15sp" />
+
+                    <!-- Quick Helpers Row -->
+                    <LinearLayout
+                        android:id="@+id/rowUrlHelpers"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnHelperHttps"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:paddingHorizontal="10dp"
+                            android:text="https://"
+                            android:textAllCaps="false"
+                            android:textColor="@color/text_primary"
+                            android:textSize="12sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnHelperDotCom"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:paddingHorizontal="10dp"
+                            android:text=".com"
+                            android:textAllCaps="false"
+                            android:textColor="@color/text_primary"
+                            android:textSize="12sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnHelperExample"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:paddingHorizontal="10dp"
+                            android:text="example.com"
+                            android:textAllCaps="false"
+                            android:textColor="@color/brand_accent"
+                            android:textSize="12sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnHelperClearUrl"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:paddingHorizontal="10dp"
+                            android:text="Clear"
+                            android:textAllCaps="false"
+                            android:textColor="@color/status_error_text"
+                            android:textSize="12sp"
+                            app:backgroundTint="@null" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Local HTML Panel -->
+                <LinearLayout
+                    android:id="@+id/panelLocalHtml"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <Button
+                        android:id="@+id/btnPickHtmlFile"
+                        android:layout_width="wrap_content"
+                        android:layout_height="44dp"
+                        android:background="@drawable/bg_focus_button"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:paddingHorizontal="18dp"
+                        android:text="📁 Import HTML via Storage Access Framework"
+                        android:textAllCaps="false"
+                        android:textColor="@color/brand_accent"
+                        android:textSize="14sp"
+                        app:backgroundTint="@null" />
+
+                    <TextView
+                        android:id="@+id/txtSelectedLocalHtmlInfo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="No local HTML document imported yet."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <!-- Navigation Policy Row -->
+            <TextView
+                android:id="@+id/lblNavPolicy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Navigation Boundary Policy:"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/panelContentContainer" />
+
+            <LinearLayout
+                android:id="@+id/rowPolicyOptions"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/lblNavPolicy">
+
+                <Button
+                    android:id="@+id/btnPolicyConfiguredHost"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="Configured Host"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    app:backgroundTint="@null" />
+
+                <Button
+                    android:id="@+id/btnPolicyAllowlist"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_marginHorizontal="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="Allowlist Only"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    app:backgroundTint="@null" />
+
+                <Button
+                    android:id="@+id/btnPolicyAnyHttp"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="Any HTTP(S)"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    app:backgroundTint="@null" />
+            </LinearLayout>
+
+            <!-- Feedback & Error View -->
+            <TextView
+                android:id="@+id/txtAdminFeedback"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textColor="@color/status_error_text"
+                android:textSize="13sp"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/rowPolicyOptions"
+                tools:text="Validation error occurred here."
+                tools:visibility="visible" />
+
+            <!-- Primary Bottom Actions -->
+            <LinearLayout
+                android:id="@+id/rowAdminBottomActions"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="horizontal"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/txtAdminFeedback">
+
+                <Button
+                    android:id="@+id/btnPreviewCandidate"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="Preview Content"
+                    android:textAllCaps="false"
+                    android:textColor="@color/brand_accent"
+                    android:textSize="14sp"
+                    app:backgroundTint="@null" />
+
+                <Button
+                    android:id="@+id/btnApplyChanges"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginHorizontal="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="Apply &amp; Save"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    app:backgroundTint="@null" />
+
+                <Button
+                    android:id="@+id/btnCancelRevert"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginHorizontal="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="Revert Edits"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    app:backgroundTint="@null" />
+
+                <Button
+                    android:id="@+id/btnCloseAdmin"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="Resume Kiosk"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    app:backgroundTint="@null" />
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

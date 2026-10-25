@@ -1,0 +1,658 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/wizardRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/dialog_scrim"
+    android:focusable="false"
+    android:padding="24dp">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollWizard"
+        android:layout_width="920dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/cardWizard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card_glow"
+            android:paddingHorizontal="36dp"
+            android:paddingVertical="28dp">
+
+            <!-- Wizard Header & Steps Indicator -->
+            <TextView
+                android:id="@+id/txtWizardBrand"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="ScreenSmithy Setup Wizard"
+                android:textColor="@color/brand_accent"
+                android:textSize="20sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Step Progress Indicator Pills -->
+            <LinearLayout
+                android:id="@+id/rowStepIndicator"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/txtWizardBrand">
+
+                <TextView
+                    android:id="@+id/stepPill1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_status_badge"
+                    android:backgroundTint="@color/focus_background"
+                    android:gravity="center"
+                    android:paddingVertical="6dp"
+                    android:text="1. Mode &amp; Status"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/stepPill2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_status_badge"
+                    android:backgroundTint="@color/surface_card"
+                    android:gravity="center"
+                    android:paddingVertical="6dp"
+                    android:text="2. Admin PIN"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/stepPill3"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_status_badge"
+                    android:backgroundTint="@color/surface_card"
+                    android:gravity="center"
+                    android:paddingVertical="6dp"
+                    android:text="3. Content Source"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/stepPill4"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_status_badge"
+                    android:backgroundTint="@color/surface_card"
+                    android:gravity="center"
+                    android:paddingVertical="6dp"
+                    android:text="4. Activate"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Dynamic Steps Container (Encapsulates all step views cleanly) -->
+            <FrameLayout
+                android:id="@+id/wizardStepContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/rowStepIndicator">
+
+                <!-- STEP 1: WELCOME & OPERATING MODE -->
+                <LinearLayout
+                    android:id="@+id/containerStep1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Operating Mode &amp; Device Capabilities"
+                        android:textColor="@color/text_primary"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="ScreenSmithy can run as a standard TV kiosk application or as a managed Device Owner for dedicated public displays."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp" />
+
+                    <!-- Device Status Card -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_status_badge"
+                        android:backgroundTint="@color/surface_card"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/txtActualDeviceModeTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Current System Provisioning Status:"
+                            android:textColor="@color/brand_accent"
+                            android:textSize="14sp"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <TextView
+                            android:id="@+id/txtActualDeviceMode"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Standard Android TV Install"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/txtActualDeviceModeTitle" />
+
+                        <TextView
+                            android:id="@+id/txtDeviceCapabilitiesSummary"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Running as a regular application. Physical Home and Power keys follow standard TV launcher behavior."
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/txtActualDeviceMode" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </LinearLayout>
+
+                <!-- STEP 2: PIN SETUP -->
+                <LinearLayout
+                    android:id="@+id/containerStep2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Admin Security PIN"
+                        android:textColor="@color/text_primary"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="A secure 6-12 digit PIN is required to protect content settings and exit the kiosk presentation."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp" />
+
+                    <!-- PIN Status Card -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_status_badge"
+                        android:backgroundTint="@color/surface_card"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/txtWizardPinStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="● Admin PIN Not Configured"
+                            android:textColor="@color/status_error_text"
+                            android:textSize="15sp"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <Button
+                            android:id="@+id/btnWizardConfigurePin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="42dp"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:paddingHorizontal="20dp"
+                            android:text="Configure Admin PIN"
+                            android:textAllCaps="false"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            app:backgroundTint="@null"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/txtWizardPinStatus" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </LinearLayout>
+
+                <!-- STEP 3: CONTENT SELECTION -->
+                <LinearLayout
+                    android:id="@+id/containerStep3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Select Kiosk Content Source"
+                        android:textColor="@color/text_primary"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Choose between a live remote HTTPS/HTTP website or an imported self-contained HTML document."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp" />
+
+                    <!-- Content Type Selector -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnWizardTypeUrl"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="Remote Web URL"
+                            android:textAllCaps="false"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnWizardTypeLocal"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="Local HTML File"
+                            android:textAllCaps="false"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="14sp"
+                            app:backgroundTint="@null" />
+                    </LinearLayout>
+
+                    <!-- Remote URL Subpanel -->
+                    <LinearLayout
+                        android:id="@+id/wizardPanelUrl"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical">
+
+                        <EditText
+                            android:id="@+id/editWizardUrl"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_input_field"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:hint="https://example.com/kiosk"
+                            android:imeOptions="actionDone"
+                            android:inputType="textUri"
+                            android:paddingHorizontal="14dp"
+                            android:singleLine="true"
+                            android:textColor="@color/text_primary"
+                            android:textColorHint="@color/text_secondary"
+                            android:textSize="15sp" />
+
+                        <!-- URL Quick Helpers -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnWizardHelperHttps"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_focus_button"
+                                android:focusable="true"
+                                android:focusableInTouchMode="true"
+                                android:paddingHorizontal="10dp"
+                                android:text="https://"
+                                android:textAllCaps="false"
+                                android:textColor="@color/text_primary"
+                                android:textSize="12sp"
+                                app:backgroundTint="@null" />
+
+                            <Button
+                                android:id="@+id/btnWizardHelperDotCom"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_focus_button"
+                                android:focusable="true"
+                                android:focusableInTouchMode="true"
+                                android:paddingHorizontal="10dp"
+                                android:text=".com"
+                                android:textAllCaps="false"
+                                android:textColor="@color/text_primary"
+                                android:textSize="12sp"
+                                app:backgroundTint="@null" />
+
+                            <Button
+                                android:id="@+id/btnWizardHelperPreset"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_focus_button"
+                                android:focusable="true"
+                                android:focusableInTouchMode="true"
+                                android:paddingHorizontal="10dp"
+                                android:text="example.com"
+                                android:textAllCaps="false"
+                                android:textColor="@color/brand_accent"
+                                android:textSize="12sp"
+                                app:backgroundTint="@null" />
+
+                            <Button
+                                android:id="@+id/btnWizardHelperClear"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:background="@drawable/bg_focus_button"
+                                android:focusable="true"
+                                android:focusableInTouchMode="true"
+                                android:paddingHorizontal="10dp"
+                                android:text="Clear"
+                                android:textAllCaps="false"
+                                android:textColor="@color/status_error_text"
+                                android:textSize="12sp"
+                                app:backgroundTint="@null" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Local HTML Subpanel -->
+                    <LinearLayout
+                        android:id="@+id/wizardPanelLocal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        tools:visibility="gone">
+
+                        <Button
+                            android:id="@+id/btnWizardPickHtml"
+                            android:layout_width="wrap_content"
+                            android:layout_height="44dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:paddingHorizontal="18dp"
+                            android:text="📁 Pick HTML Document (SAF)"
+                            android:textAllCaps="false"
+                            android:textColor="@color/brand_accent"
+                            android:textSize="14sp"
+                            app:backgroundTint="@null" />
+
+                        <TextView
+                            android:id="@+id/txtWizardLocalInfo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="No local HTML document imported yet."
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <!-- Navigation Policy Selector -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Navigation Boundary Policy:"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnWizardPolicyConfigured"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_marginEnd="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="Configured Host"
+                            android:textAllCaps="false"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnWizardPolicyAllowlist"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_marginHorizontal="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="Allowlist Only"
+                            android:textAllCaps="false"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnWizardPolicyAny"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_marginStart="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="Any HTTP(S)"
+                            android:textAllCaps="false"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp"
+                            app:backgroundTint="@null" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- STEP 4: PREVIEW & ACTIVATE -->
+                <LinearLayout
+                    android:id="@+id/containerStep4"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Review &amp; Activate Presentation"
+                        android:textColor="@color/text_primary"
+                        android:textSize="22sp" />
+
+                    <!-- Configuration Summary Card -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_status_badge"
+                        android:backgroundTint="@color/surface_card"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/lblSummaryContent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Configured Content:"
+                            android:textColor="@color/brand_accent"
+                            android:textSize="14sp"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <TextView
+                            android:id="@+id/txtSummaryContentSource"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/lblSummaryContent"
+                            tools:text="https://example.com/kiosk" />
+
+                        <TextView
+                            android:id="@+id/lblSummaryPolicy"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Navigation Boundary:"
+                            android:textColor="@color/brand_accent"
+                            android:textSize="14sp"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/txtSummaryContentSource" />
+
+                        <TextView
+                            android:id="@+id/txtSummaryPolicy"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/lblSummaryPolicy"
+                            tools:text="CONFIGURED_HOST_ONLY" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    <Button
+                        android:id="@+id/btnWizardPreview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/bg_focus_button"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:paddingHorizontal="20dp"
+                        android:text="👁 Preview Content Live"
+                        android:textAllCaps="false"
+                        android:textColor="@color/brand_accent"
+                        android:textSize="14sp"
+                        app:backgroundTint="@null" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <!-- Error / Validation Banner -->
+            <TextView
+                android:id="@+id/txtWizardError"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:textColor="@color/status_error_text"
+                android:textSize="13sp"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/wizardStepContainer"
+                tools:text="Error message"
+                tools:visibility="visible" />
+
+            <!-- Navigation Controls (Back / Next / Activate) -->
+            <LinearLayout
+                android:id="@+id/rowWizardNavigation"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="horizontal"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/txtWizardError">
+
+                <Button
+                    android:id="@+id/btnWizardBack"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="Back"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="15sp"
+                    android:visibility="gone"
+                    app:backgroundTint="@null"
+                    tools:visibility="visible" />
+
+                <Button
+                    android:id="@+id/btnWizardNext"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="2"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="Continue"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp"
+                    app:backgroundTint="@null" />
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
