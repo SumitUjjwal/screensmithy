@@ -50,6 +50,9 @@ com.screensmithy.app/
 │   │   ├── AdminAuthRepository.kt
 │   │   ├── AdminSessionManager.kt
 │   │   └── PinSecurity.kt         # PBKDF2WithHmacSHA256, salting, rate limiting
+│   ├── transfer/                  # Local Wi-Fi transfer session lifecycle and state
+│   │   ├── WifiTransferSession.kt # Session state, 6-digit PIN, 5-min timeout, rate limiting
+│   │   └── WifiTransferManager.kt # Session coordinator and countdown ticker
 │   ├── devicepolicy/              # Device Owner and Lock Task mode abstractions
 │   │   ├── DeviceOwnerPolicyManager.kt
 │   │   ├── LockTaskStatus.kt
@@ -66,6 +69,11 @@ com.screensmithy.app/
 │   │   └── DataStoreConfigurationRepository.kt  # Jetpack DataStore (Proto-style JSON)
 │   ├── auth/
 │   │   └── DataStoreAdminAuthRepository.kt       # Secure salted PIN hash storage
+│   ├── transfer/                  # Local HTTP upload service and network resolution
+│   │   ├── NetworkUtils.kt        # Local IPv4 resolution and safe port search (SO_REUSEADDR)
+│   │   ├── WifiTransferHttpServer.kt # ServerSocket HTTP server, DNS rebinding guard, constant-time auth
+│   │   ├── MultipartStreamHandler.kt # Memory-efficient streaming multipart parser
+│   │   └── SenderHtmlTemplate.kt  # Embedded responsive dark-mode browser upload page
 │   ├── devicepolicy/
 │   │   └── AndroidDeviceOwnerPolicyManager.kt    # Real DevicePolicyManager integration
 │   ├── importer/
@@ -84,6 +92,9 @@ com.screensmithy.app/
 │   ├── admin/
 │   │   ├── AdminDashboardDialog.kt # Settings, Lock Task toggles, diagnostics export
 │   │   └── AdminContentDialog.kt   # Live content staging, testing, and preview
+│   ├── transfer/                  # TV-side Wi-Fi transfer presentation
+│   │   ├── WifiTransferDialog.kt  # Fullscreen TV modal with QR code, timer, and preview controls
+│   │   └── QrCodeGenerator.kt     # High-contrast ZXing QR code bitmap generator
 │   └── importer/
 │       └── HtmlDocumentPickerContract.kt # Storage Access Framework (SAF) contract
 └── receiver/                      # Broadcast receivers
@@ -258,3 +269,121 @@ ScreenSmithy runs on any Android TV device, adapting its capabilities based on p
 | **Lock Task Mode** | Not available (system screen pinning only). | Full `LOCK_TASK_MODE_LOCKED` allowlisted in policy. |
 | **System Key Suppression** | Standard TV OS handles Home/Power/OEM buttons. | Home and Back buttons locked to kiosk; status bar and notifications suppressed. |
 | **Maintenance Path** | Exit kiosk via Admin Dashboard or TV Settings. | Authenticated `stopLockTask()` release in Admin Dashboard. |
+
+---
+
+## 8. Wi-Fi HTML Transfer Subsystem & Lifecycle
+
+To solve the absence of the Android Storage Access Framework (`DocumentsUI`) on Google TV and Android TV, ScreenSmithy provides a zero-install, browser-based peer transfer subsystem over the local Wi-Fi network.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Administrator (TV)
+    actor Sender as Browser (Phone/PC)
+    participant Dialog as WifiTransferDialog
+    participant Mgr as WifiTransferManager
+    participant Server as WifiTransferHttpServer
+    participant Importer as LocalHtmlImporter
+    participant Main as MainActivity
+    participant WV as KioskWebView
+
+    Admin->>Dialog: Select "Transfer from Another Device"
+    Dialog->>Mgr: startSession()
+    Mgr->>Mgr: Resolve local IPv4 (NetworkUtils)
+    Mgr->>Mgr: Generate 6-digit pairing code (SecureRandom)
+    Mgr->>Server: start() [bind to local IP:8080..8100, SO_REUSEADDR]
+    Mgr->>Dialog: Session state (IP, Port, Code, QR, 5m Timer)
+    Dialog->>Admin: Display QR code, pairing code, and countdown timer
+
+    Sender->>Server: GET / (Scan QR or navigate to TV IP)
+    Server-->>Sender: 200 OK (Embedded Responsive Sender Web App)
+    
+    Sender->>Sender: Enter 6-digit pairing code & select HTML file (≤ 25 MB)
+    Sender->>Server: POST /api/upload (Multipart stream + X-Pairing-Code)
+    
+    Server->>Server: Validate Host header (DNS rebinding guard)
+    Server->>Server: Verify pairing code (MessageDigest.isEqual constant-time)
+    alt Invalid Pairing Code
+        Server->>Mgr: onPairingAttemptFailed()
+        Server-->>Sender: 401 Unauthorized
+        Note over Mgr: Track failed attempts; lock out after 5 failures
+    else Valid Code
+        Server->>Server: Stream multipart directly to staging disk file
+        Server->>Server: Validate file extension (.html/.htm) and content structure
+        Server-->>Sender: 200 OK {"success":true}
+        Server->>Mgr: onUploadCompleted()
+        Note over Server: Server stops immediately; closes port
+        Mgr->>Dialog: State.Completed(stagedFile)
+        
+        Dialog->>Importer: importStagedFile(stagedFile, fileName)
+        Importer->>Importer: Atomic rename to app-private storage: imported_html/<id>/<name>.html
+        Importer->>Importer: Compute SHA-256 & persist LocalHtmlMetadata
+        Importer-->>Dialog: ImportResult.Success(metadata)
+        Dialog->>Admin: Display uploaded file info, "Preview Content", "Confirm & Activate"
+        
+        alt Admin clicks "Preview Content"
+            Admin->>Dialog: Click "Preview Content"
+            Dialog->>Main: onPreviewRequested(LocalHtml, policy)
+            Dialog->>Dialog: dismiss()
+            Main->>WV: loadContent(LocalHtml, policy)
+            Main->>Admin: Display Fullscreen Preview with Top Preview Bar
+            Admin->>Main: Click "Confirm & Activate" on Preview Bar
+            Main->>Main: updateConfiguration(isSetupCompleted = true)
+            Main->>WV: loadContent(LocalHtml, policy)
+            Main->>Admin: Fullscreen Live Kiosk Presentation
+        else Admin clicks "Confirm & Activate" directly
+            Admin->>Dialog: Click "Confirm & Activate"
+            Dialog->>Main: onActivationConfirmed(LocalHtml)
+            Dialog->>Dialog: dismiss()
+            Main->>Main: updateConfiguration(isSetupCompleted = true)
+            Main->>WV: loadContent(LocalHtml, policy)
+            Main->>Admin: Fullscreen Live Kiosk Presentation
+        else Admin cancels or session expires
+            Dialog->>Mgr: stopSession()
+            Dialog->>Dialog: dismiss()
+            Note over Main: Preserve previous working kiosk configuration
+        end
+    end
+```
+
+### 8.1 Key Subsystem Components & Responsibilities
+
+1. **`NetworkUtils`**:
+   - Resolves the TV's primary IPv4 address on active `wlan*` or `eth*` network interfaces, filtering out loopback and virtual interfaces.
+   - Allocates an available TCP port in the preferred range (`8080`..`8100`) using `SO_REUSEADDR` to avoid `BindException` caused by sockets in `TIME_WAIT`.
+
+2. **`WifiTransferSession` & `WifiTransferManager`**:
+   - Manages the lifecycle and state transitions (`WaitingForConnection`, `ReceivingUpload`, `Validating`, `Completed`, `Failed`, `Cancelled`).
+   - Generates a cryptographically random 6-digit numeric pairing code using `java.security.SecureRandom`.
+   - Maintains a 5-minute session countdown ticker via Kotlin coroutines.
+   - Enforces brute-force lockout: session shuts down if 5 failed pairing attempts occur.
+
+3. **`WifiTransferHttpServer`**:
+   - Built on standard Java `ServerSocket` without external server frameworks.
+   - Bound strictly to the resolved local IP (never `0.0.0.0`).
+   - Defends against DNS rebinding by validating the `Host` request header against the bound IP and port.
+   - Performs constant-time pairing code comparison using `MessageDigest.isEqual` to prevent timing attacks.
+   - Enforces a 25 MB request body limit to prevent memory or disk exhaustion.
+
+4. **`MultipartStreamHandler`**:
+   - Streams multipart form data chunks directly from the socket input stream into a temporary file in `imported_html/staging/`.
+   - Never loads the complete file into JVM heap RAM, ensuring stability on memory-constrained Android TV hardware.
+
+5. **`SenderHtmlTemplate`**:
+   - Self-contained HTML5/CSS3/JavaScript web page embedded directly within the application binary.
+   - Zero external CDN dependencies (works entirely offline on air-gapped local Wi-Fi networks).
+   - Responsive dark-mode styling with client-side file-size and file-type validation, progress bar, and user-friendly error alerts.
+
+6. **`LocalHtmlImporter.importStagedFile` & `WebViewAssetLoader`**:
+   - Verifies the uploaded document contains valid HTML tags (`<html>`, `<body>`, `<!doctype`).
+   - Generates a unique document directory: `context.filesDir/imported_html/<documentId>/<sanitizedFileName>.html`.
+   - Atomically moves the staged file into its final document directory using `File.renameTo()`.
+   - Computes SHA-256 checksum and saves metadata.
+   - Served in `KioskWebView` via `androidx.webkit.WebViewAssetLoader` at `https://appassets.androidplatform.net/imported_content/<documentId>/<file>.html`.
+
+7. **Preview Bar & Atomic Activation**:
+   - Supports explicit pre-activation review: clicking **Preview Content** launches the sandboxed WebView with a high-contrast top **Preview Bar** (`Confirm & Activate`, `Exit Preview`).
+   - If confirmed, `ConfigurationRepository.updateConfiguration` atomically commits the new `ContentSource.LocalHtml`, marks `isSetupCompleted = true`, and enters live kiosk presentation.
+   - If cancelled or if the preview fails, the previous working configuration is preserved without disruption.
+

@@ -79,12 +79,65 @@ When troubleshooting unexpected behavior on an Android TV device, check these co
 
 ## 4. Local HTML & Content Import Issues
 
+### Symptom: "You don't have an app that can do this" or Document Picker Failure
+- **Cause**: Most Android TV and Google TV devices (including Google TV Streamer, Chromecast with Google TV, Sony Bravia, Xiaomi Mi Box, and TCL Google TV) do not ship with the Android Document Picker (`com.android.documentsui`). Instead, the system registers a stub component (`com.android.tv.frameworkpackagestubs/.Stubs$DocumentsStub`) for `ACTION_OPEN_DOCUMENT`. Invoking this stub does not launch a picker; it displays the system error toast `"You don't have an app that can do this."` and returns `RESULT_CANCELED`.
+- **ScreenSmithy Solution**:
+  1. ScreenSmithy's `HtmlDocumentPickerContract.isAvailable(context)` actively inspects the intent resolver before launching the intent. If it detects that only framework stubs are present or no resolver exists, it suppresses the unsupported intent and displays a helpful modal dialog:
+     - *"No Document Picker App Installed: This Android TV device does not have a system file picker (DocumentsUI) installed. You can transfer HTML files wirelessly from your phone, tablet, or computer over local Wi-Fi."*
+  2. Click **"Transfer over Wi-Fi"** directly from that dialog to start a browser-based transfer session.
+  3. Alternatively, open Admin Settings $\to$ **Content & Policy** $\to$ select the **"Transfer from Another Device"** tab.
+
+### Symptom: TV shows "No Active Network Connection" and no QR code during Wi-Fi Transfer
+- **Cause**: The TV is not connected to a local Wi-Fi or Ethernet network, or has not acquired an IPv4 address via DHCP.
+- **Check**: Inspect the diagnostic status box on the TV transfer screen. It will show `"No local IPv4 network interface found (Wi-Fi or Ethernet)"`.
+- **Solution**:
+  1. Press `Back` to exit the transfer screen.
+  2. Open Android TV Settings $\to$ **Network & Internet**.
+  3. Ensure Wi-Fi or Ethernet is connected and has obtained an IP address (e.g., `192.168.1.x` or `10.x.x.x`).
+  4. Return to ScreenSmithy and reopen **Transfer from Another Device**.
+
+### Symptom: Phone or computer browser cannot connect to TV upload page ("Site cannot be reached" / "Connection timed out")
+- **Cause 1 (Different Networks)**: The phone or laptop is on a different Wi-Fi network (or mobile data / cellular 5G) than the TV.
+  - **Solution**: Connect both the sending device and the TV to the exact same Wi-Fi SSID.
+- **Cause 2 (Client / AP Isolation)**: The Wi-Fi access point or router has **Client Isolation** (also called "AP Isolation", "Guest Network Isolation", or "Station Separation") enabled. This enterprise/guest router feature blocks wireless devices on the same subnet from communicating directly with each other.
+  - **Check**: Open a terminal on your computer and run `ping <tv-ip>` or `curl -I http://<tv-ip>:8080/`. If ping times out while the TV shows an active IP address, client isolation is active.
+  - **Solution**: Connect both devices to a standard/private Wi-Fi network where local peer-to-peer communication is allowed, or disable AP isolation in the router settings.
+- **Cause 3 (Port Omitted or Mismatched)**: The port assigned by ScreenSmithy (e.g., `:8080`) was omitted from the browser address bar.
+  - **Solution**: Ensure you include the full URL with port: `http://<tv-ip>:<port>/` (or scan the QR code using your phone camera).
+
+### Symptom: "Invalid pairing code" or "Session has expired"
+- **Cause 1 (Typo in Code)**: The 6-digit numeric pairing code displayed on the TV was entered incorrectly in the browser.
+  - **Solution**: Verify the 6-digit code on the TV screen. Note that entering 5 incorrect codes consecutively locks out the session for security.
+- **Cause 2 (Session Timeout)**: The 5-minute transfer window elapsed.
+  - **Solution**: If the TV timer reaches `0:00`, click **Cancel & Close** and click **Transfer from Another Device** to start a fresh 5-minute session.
+- **Cause 3 (Session Locked Out)**: Five consecutive failed pairing attempts occurred.
+  - **Solution**: The TV transfer screen will display a red security warning: `"Session Locked Out: 5 failed pairing attempts. Transfer terminated."`. Close the dialog and initiate a new session.
+
+### Symptom: "File upload failed" / "Selected file exceeds the maximum allowed size of 25 MB"
+- **Cause 1 (File Too Large)**: The uploaded file exceeds the 25 MB limit (`26,214,400 bytes`).
+  - **Solution**: Compress inline media (images, audio, fonts) or remove unnecessary embedded binary blobs to bring the file under 25 MB.
+- **Cause 2 (Non-HTML File)**: The uploaded file does not end in `.html` or `.htm`, or the content does not start with standard HTML tags (`<!DOCTYPE html` or `<html`).
+  - **Solution**: Save the file as a valid `.html` document. ScreenSmithy does not accept `.zip`, `.pdf`, `.png`, or raw script files.
+
+### Symptom: Upload interrupted or stalled halfway through
+- **Cause**: Network packet drop, sender device screen turning off, or Wi-Fi disconnection during upload.
+- **Solution**:
+  - ScreenSmithy streams uploads directly to an isolated temporary file (`scratch/import_staging/wifi_upload_*.tmp`). If the stream is interrupted, the temporary file is deleted automatically and the previous active kiosk configuration remains unaffected.
+  - Re-select the file on the sender page and click **"Upload to ScreenSmithy"** again.
+
+### Symptom: Preview renders blank or broken; how to safely roll back
+- **Cause**: The uploaded HTML contains syntax errors, references external relative resources (`style.css`, `app.js`) that were not bundled inline, or attempts to execute unsupported APIs.
+- **Solution**:
+  - While in **Preview Mode**, inspect the content. Notice the top banner: `"👁 PREVIEW MODE — <filename>"`.
+  - If the page looks broken, click **"Exit Preview"** on the remote control. ScreenSmithy immediately rolls back and resumes the prior working configuration without interruption.
+  - To activate the new content, click **"Confirm & Activate"**. The new file is committed atomically to app-private storage.
+
 ### Symptom: "Configured local document is missing from app storage"
 - **Cause**: The imported HTML file was deleted or the app storage was cleared.
 - **Solution**:
   1. Open Admin Settings $\to$ **Content & Policy**.
-  2. Click **Import Local HTML**.
-  3. Re-import your `.html` file from internal storage or a connected USB drive.
+  2. Click **Transfer from Another Device** (or **Browse Local Files (SAF)** if a picker is installed).
+  3. Re-import your `.html` file.
 
 ### Symptom: Local HTML displays text but images, styles, or scripts are missing
 - **Cause**: A single `.html` file was imported without its referenced external CSS, JS, or image assets.

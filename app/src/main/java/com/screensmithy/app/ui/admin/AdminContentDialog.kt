@@ -36,6 +36,7 @@ class AdminContentDialog : DialogFragment() {
     private var deviceInfoProvider: DeviceManagementInfoProvider? = null
 
     private var onPickHtmlRequested: (() -> Unit)? = null
+    private var onWifiTransferRequested: (() -> Unit)? = null
     private var onPreviewRequested: ((ContentSource, NavigationPolicy) -> Unit)? = null
     private var onReloadActiveRequested: (() -> Unit)? = null
     private var onDismissed: (() -> Unit)? = null
@@ -45,7 +46,8 @@ class AdminContentDialog : DialogFragment() {
 
     enum class SourceTab {
         REMOTE_URL,
-        LOCAL_HTML
+        LOCAL_HTML,
+        WIFI_TRANSFER
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -99,6 +101,10 @@ class AdminContentDialog : DialogFragment() {
         binding.tabLocalHtml.setOnClickListener {
             selectTab(SourceTab.LOCAL_HTML)
         }
+
+        binding.tabWifiTransfer.setOnClickListener {
+            selectTab(SourceTab.WIFI_TRANSFER)
+        }
     }
 
     private fun selectTab(tab: SourceTab) {
@@ -107,16 +113,29 @@ class AdminContentDialog : DialogFragment() {
             SourceTab.REMOTE_URL -> {
                 binding.tabRemoteUrl.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
                 binding.tabLocalHtml.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
+                binding.tabWifiTransfer.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
                 binding.panelRemoteUrl.visibility = View.VISIBLE
                 binding.panelLocalHtml.visibility = View.GONE
+                binding.panelWifiTransfer.visibility = View.GONE
                 binding.editRemoteUrl.requestFocus()
             }
             SourceTab.LOCAL_HTML -> {
                 binding.tabLocalHtml.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
                 binding.tabRemoteUrl.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
+                binding.tabWifiTransfer.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
                 binding.panelLocalHtml.visibility = View.VISIBLE
                 binding.panelRemoteUrl.visibility = View.GONE
+                binding.panelWifiTransfer.visibility = View.GONE
                 binding.btnPickHtmlFile.requestFocus()
+            }
+            SourceTab.WIFI_TRANSFER -> {
+                binding.tabWifiTransfer.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
+                binding.tabRemoteUrl.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
+                binding.tabLocalHtml.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
+                binding.panelWifiTransfer.visibility = View.VISIBLE
+                binding.panelRemoteUrl.visibility = View.GONE
+                binding.panelLocalHtml.visibility = View.GONE
+                binding.btnStartWifiTransfer.requestFocus()
             }
         }
     }
@@ -180,6 +199,14 @@ class AdminContentDialog : DialogFragment() {
     }
 
     private fun setupActions() {
+        binding.btnPickHtmlFile.setOnClickListener {
+            onPickHtmlRequested?.invoke()
+        }
+
+        binding.btnStartWifiTransfer.setOnClickListener {
+            onWifiTransferRequested?.invoke()
+        }
+
         binding.btnReloadActive.setOnClickListener {
             onReloadActiveRequested?.invoke()
             showFeedback("Active kiosk content reloaded successfully.")
@@ -236,7 +263,7 @@ class AdminContentDialog : DialogFragment() {
     }
 
     /**
-     * Called by host activity when an HTML document is successfully imported via SAF.
+     * Called by host activity when an HTML document is successfully imported via SAF or Wi-Fi.
      */
     fun onLocalHtmlImported(metadata: LocalHtmlMetadata) {
         val controller = contentController ?: return
@@ -275,7 +302,7 @@ class AdminContentDialog : DialogFragment() {
         } else {
             val state = controller.state.value
             if (state == null || state.stagedSource !is ContentSource.LocalHtml) {
-                showFeedback("Please import a local HTML file first.")
+                showFeedback("Please import or transfer a local HTML file first.")
                 return
             }
             hideFeedback()
@@ -334,6 +361,7 @@ class AdminContentDialog : DialogFragment() {
             contentController: AdminContentController,
             deviceInfoProvider: DeviceManagementInfoProvider,
             onPickHtmlRequested: () -> Unit,
+            onWifiTransferRequested: () -> Unit = {},
             onPreviewRequested: (ContentSource, NavigationPolicy) -> Unit,
             onReloadActiveRequested: () -> Unit,
             onDismissed: () -> Unit
@@ -342,6 +370,7 @@ class AdminContentDialog : DialogFragment() {
                 this.contentController = contentController
                 this.deviceInfoProvider = deviceInfoProvider
                 this.onPickHtmlRequested = onPickHtmlRequested
+                this.onWifiTransferRequested = onWifiTransferRequested
                 this.onPreviewRequested = onPreviewRequested
                 this.onReloadActiveRequested = onReloadActiveRequested
                 this.onDismissed = onDismissed

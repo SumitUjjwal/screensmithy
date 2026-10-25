@@ -280,6 +280,62 @@ class LocalHtmlImporterTest {
         assertTrue(nonTmpFile.exists())
     }
 
+    @Test
+    fun importStagedFile_withValidHtml_importsSuccessfullyAndHashes() = testScope.runTest {
+        val htmlContent = "<html><body><h1>Wi-Fi Imported</h1></body></html>"
+        val stagedFile = tempFolder.newFile("wifi_staged.tmp").apply {
+            writeText(htmlContent)
+        }
+
+        val result = importer.importStagedFile(stagedFile, "signage.html")
+        assertTrue(result is ImportResult.Success)
+
+        val metadata = (result as ImportResult.Success).metadata
+        assertEquals("signage.html", metadata.displayName)
+        assertEquals(htmlContent.toByteArray().size.toLong(), metadata.sizeBytes)
+        assertFalse(stagedFile.exists()) // Promoted/moved
+
+        val storedFile = File(appFilesDir, metadata.relativePath)
+        assertTrue(storedFile.exists())
+        assertEquals(htmlContent, storedFile.readText())
+    }
+
+    @Test
+    fun importStagedFile_withInvalidExtension_returnsFailure() = testScope.runTest {
+        val stagedFile = tempFolder.newFile("wifi_staged.tmp").apply {
+            writeText("executable code")
+        }
+
+        val result = importer.importStagedFile(stagedFile, "evil.exe")
+        assertTrue(result is ImportResult.Failure)
+        assertTrue((result as ImportResult.Failure).error is ImportError.InvalidExtension)
+        assertFalse(stagedFile.exists()) // Cleaned up
+    }
+
+    @Test
+    fun importStagedFile_withEmptyFile_returnsFailure() = testScope.runTest {
+        val stagedFile = tempFolder.newFile("empty.tmp")
+
+        val result = importer.importStagedFile(stagedFile, "empty.html")
+        assertTrue(result is ImportResult.Failure)
+        assertTrue((result as ImportResult.Failure).error is ImportError.EmptyFile)
+    }
+
+    @Test
+    fun importStagedFile_sanitizesPathTraversal_storesSafely() = testScope.runTest {
+        val htmlContent = "<p>Path traversal test</p>"
+        val stagedFile = tempFolder.newFile("staged_traversal.tmp").apply {
+            writeText(htmlContent)
+        }
+
+        val result = importer.importStagedFile(stagedFile, "../../../etc/passwd.html")
+        assertTrue(result is ImportResult.Success)
+
+        val metadata = (result as ImportResult.Success).metadata
+        assertFalse(metadata.relativePath.contains(".."))
+        assertTrue(metadata.relativePath.startsWith("imported_html/"))
+    }
+
     /**
      * Test fake implementation of [ContentStreamResolver].
      */
