@@ -91,11 +91,10 @@ class DataStoreConfigurationRepository(
             }
 
             is ContentSource.RemoteUrl -> {
-                val url = source.url.trim()
-                require(url.isNotBlank()) { "Remote URL cannot be blank" }
-                val isHttp = url.startsWith("http://", ignoreCase = true) ||
-                        url.startsWith("https://", ignoreCase = true)
-                require(isHttp) { "Remote URL must use http:// or https:// scheme" }
+                val validation = com.screensmithy.app.domain.url.UrlValidator.validate(source.url)
+                require(validation is com.screensmithy.app.domain.url.UrlValidationResult.Valid) {
+                    (validation as com.screensmithy.app.domain.url.UrlValidationResult.Invalid).userMessage
+                }
             }
 
             is ContentSource.LocalHtml -> {
@@ -171,7 +170,14 @@ class DataStoreConfigurationRepository(
             NavigationMode.CONFIGURED_HOST_ONLY
         }
         val trustedHosts = preferences[KEY_NAV_TRUSTED_HOSTS] ?: emptySet()
-        val navigationPolicy = NavigationPolicy(mode = navMode, trustedHosts = trustedHosts)
+        val approvedRedirects = preferences[KEY_NAV_APPROVED_REDIRECTS] ?: emptySet()
+        val includeSubdomains = preferences[KEY_NAV_INCLUDE_SUBDOMAINS] ?: false
+        val navigationPolicy = NavigationPolicy(
+            mode = navMode,
+            trustedHosts = trustedHosts,
+            approvedRedirectHosts = approvedRedirects,
+            includeSubdomains = includeSubdomains
+        )
 
         val keepAwake = preferences[KEY_DISPLAY_KEEP_AWAKE] ?: true
         val displayPreferences = DisplayPreferences(keepScreenAwake = keepAwake)
@@ -234,6 +240,8 @@ class DataStoreConfigurationRepository(
 
         preferences[KEY_NAV_MODE] = config.navigationPolicy.mode.name
         preferences[KEY_NAV_TRUSTED_HOSTS] = config.navigationPolicy.trustedHosts
+        preferences[KEY_NAV_APPROVED_REDIRECTS] = config.navigationPolicy.approvedRedirectHosts
+        preferences[KEY_NAV_INCLUDE_SUBDOMAINS] = config.navigationPolicy.includeSubdomains
 
         preferences[KEY_DISPLAY_KEEP_AWAKE] = config.displayPreferences.keepScreenAwake
 
@@ -276,6 +284,8 @@ class DataStoreConfigurationRepository(
 
         val KEY_NAV_MODE = stringPreferencesKey("config_nav_mode")
         val KEY_NAV_TRUSTED_HOSTS = stringSetPreferencesKey("config_nav_trusted_hosts")
+        val KEY_NAV_APPROVED_REDIRECTS = stringSetPreferencesKey("config_nav_approved_redirects")
+        val KEY_NAV_INCLUDE_SUBDOMAINS = booleanPreferencesKey("config_nav_include_subdomains")
 
         val KEY_DISPLAY_KEEP_AWAKE = booleanPreferencesKey("config_display_keep_awake")
 

@@ -59,7 +59,9 @@ class DataStoreConfigurationRepositoryTest {
                 contentSource = ContentSource.RemoteUrl("https://kiosk.company.lan/status"),
                 navigationPolicy = NavigationPolicy(
                     mode = NavigationMode.ALLOWLIST_ONLY,
-                    trustedHosts = setOf("kiosk.company.lan", "auth.company.lan")
+                    trustedHosts = setOf("kiosk.company.lan", "auth.company.lan"),
+                    approvedRedirectHosts = setOf("idp.sso.lan"),
+                    includeSubdomains = true
                 ),
                 retryPolicy = RetryPolicy(maxRetries = 5, initialBackoffSeconds = 10, maxBackoffSeconds = 120)
             )
@@ -73,6 +75,8 @@ class DataStoreConfigurationRepositoryTest {
         assertEquals("https://kiosk.company.lan/status", (saved.contentSource as ContentSource.RemoteUrl).url)
         assertEquals(NavigationMode.ALLOWLIST_ONLY, saved.navigationPolicy.mode)
         assertEquals(setOf("kiosk.company.lan", "auth.company.lan"), saved.navigationPolicy.trustedHosts)
+        assertEquals(setOf("idp.sso.lan"), saved.navigationPolicy.approvedRedirectHosts)
+        assertTrue(saved.navigationPolicy.includeSubdomains)
         assertEquals(5, saved.retryPolicy.maxRetries)
         assertEquals(10, saved.retryPolicy.initialBackoffSeconds)
         assertEquals(120, saved.retryPolicy.maxBackoffSeconds)
