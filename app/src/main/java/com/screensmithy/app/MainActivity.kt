@@ -1,16 +1,24 @@
 package com.screensmithy.app
 
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.screensmithy.app.data.auth.DataStoreAdminAuthRepository
+import com.screensmithy.app.data.auth.adminAuthDataStore
 import com.screensmithy.app.databinding.ActivityMainBinding
+import com.screensmithy.app.domain.auth.AdminAuthRepository
+import com.screensmithy.app.domain.auth.AdminSessionManager
+import com.screensmithy.app.domain.auth.RemoteSequenceDetector
 import com.screensmithy.app.domain.model.ContentSource
 import com.screensmithy.app.domain.model.LocalHtmlMetadata
 import com.screensmithy.app.domain.model.NavigationPolicy
 import com.screensmithy.app.domain.renderer.RendererEvent
 import com.screensmithy.app.domain.renderer.RendererState
+import com.screensmithy.app.ui.auth.AdminPinDialog
+import com.screensmithy.app.ui.auth.PinDialogMode
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
@@ -18,21 +26,46 @@ import java.io.File
 /**
  * Foundation Activity & Development Harness for ScreenSmithy.
  * Confirms application launch, TV-friendly landscape display, remote D-pad input handling,
- * and live testing of the [com.screensmithy.app.ui.renderer.KioskWebView] renderer.
+ * [com.screensmithy.app.ui.renderer.KioskWebView] renderer, and Phase 06 hidden remote sequence
+ * / PIN authentication boundary.
  */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+
+    private lateinit var authRepository: AdminAuthRepository
+    private lateinit var sessionManager: AdminSessionManager
+    private lateinit var sequenceDetector: RemoteSequenceDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        initSecurityComponents()
         setupDpadTest()
         setupRendererDemo()
+        setupAdminGateButton()
         setupBackNavigation()
         observeRenderer()
+    }
+
+    private fun initSecurityComponents() {
+        authRepository = DataStoreAdminAuthRepository(applicationContext.adminAuthDataStore)
+        sessionManager = AdminSessionManager(authRepository)
+        sequenceDetector = RemoteSequenceDetector {
+            triggerAdminPinGate("Hidden Remote Sequence Completed")
+        }
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // Inspect Android native input layer for hidden remote sequence
+        // Intermediate keys return false (not consumed) to preserve webpage navigation.
+        // The final completing key returns true (consumed) to trigger the admin gate.
+        if (sequenceDetector.onKeyEvent(event)) {
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     private fun setupDpadTest() {
@@ -73,6 +106,45 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnCloseDemo.setOnClickListener {
             closeDemo()
+        }
+    }
+
+    private fun setupAdminGateButton() {
+        binding.btnAdminGate.setOnClickListener {
+            triggerAdminPinGate("Admin Button Pressed")
+        }
+    }
+
+    private fun triggerAdminPinGate(triggerSource: String) {
+        lifecycleScope.launch {
+            val isConfigured = authRepository.isPinConfigured()
+            val mode = if (isConfigured) PinDialogMode.VERIFY else PinDialogMode.SETUP
+
+            val dialog = AdminPinDialog.newInstance(
+                mode = mode,
+                authRepository = authRepository,
+                sessionManager = sessionManager,
+                onAuthenticated = {
+                    binding.txtFeedback.apply {
+                        visibility = View.VISIBLE
+                        text = "Authenticated! Admin Session Active (via $triggerSource)."
+                    }
+                },
+                onPinSetupCompleted = {
+                    binding.txtFeedback.apply {
+                        visibility = View.VISIBLE
+                        text = "Admin PIN setup completed! Active session initialized."
+                    }
+                },
+                onCancelled = {
+                    binding.txtFeedback.apply {
+                        visibility = View.VISIBLE
+                        text = "Admin authentication cancelled."
+                    }
+                }
+            )
+
+            dialog.show(supportFragmentManager, AdminPinDialog.TAG)
         }
     }
 
@@ -215,6 +287,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        sequenceDetector.reset()
+        sessionManager.endSession()
         binding.kioskWebView.pauseTimers()
     }
 
