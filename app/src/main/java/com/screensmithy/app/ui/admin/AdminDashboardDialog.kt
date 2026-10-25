@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
@@ -21,6 +22,7 @@ import com.screensmithy.app.domain.diagnostics.LogCategory
 import com.screensmithy.app.domain.diagnostics.LogLevel
 import com.screensmithy.app.domain.diagnostics.SystemDiagnosticInspector
 import com.screensmithy.app.domain.diagnostics.SystemDiagnosticSnapshot
+import com.screensmithy.app.domain.launcher.HomeLauncherManager
 import com.screensmithy.app.domain.repository.ConfigurationRepository
 import kotlinx.coroutines.launch
 
@@ -129,19 +131,25 @@ class AdminDashboardDialog : DialogFragment() {
         binding.badgeDashboardOperatingMode.text = snapshot.operatingMode
 
         // Default Home Launcher
+        val launcherManager = HomeLauncherManager(context)
+        binding.txtLauncherGuidance.text = launcherManager.getLauncherGuidance(snapshot.defaultHomeLauncher)
+
         when (val dl = snapshot.defaultHomeLauncher) {
             is DefaultLauncherStatus.Yes -> {
                 binding.valDiagLauncher.text = "ScreenSmithy (Default Home Launcher)"
                 binding.valDiagLauncher.setTextColor(ContextCompat.getColor(context, R.color.status_success_text))
+                binding.btnConfigureDefaultLauncher.text = "✓ ScreenSmithy is Default Home App"
             }
             is DefaultLauncherStatus.No -> {
                 val current = dl.currentDefaultPackage ?: "Other"
                 binding.valDiagLauncher.text = "Not Default (Current: $current)"
                 binding.valDiagLauncher.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+                binding.btnConfigureDefaultLauncher.text = "🏠 Configure Default Home App"
             }
             is DefaultLauncherStatus.Unknown -> {
                 binding.valDiagLauncher.text = "Unavailable / Undetectable"
                 binding.valDiagLauncher.setTextColor(ContextCompat.getColor(context, R.color.text_muted))
+                binding.btnConfigureDefaultLauncher.text = "🏠 Configure Default Home App"
             }
         }
 
@@ -258,6 +266,27 @@ class AdminDashboardDialog : DialogFragment() {
                     LogCategory.CONFIG,
                     "Reload on network restored setting updated to: $newVal"
                 )
+            }
+        }
+
+        // Action: Configure Default Home Launcher
+        binding.btnConfigureDefaultLauncher.setOnClickListener {
+            val ctx = context ?: return@setOnClickListener
+            diagnosticLogger?.log(
+                LogLevel.INFO,
+                LogCategory.KIOSK_POLICY,
+                "Admin requested default Home application configuration"
+            )
+            try {
+                val intent = HomeLauncherManager(ctx).createHomeSettingsIntent()
+                startActivity(intent)
+            } catch (e: Exception) {
+                diagnosticLogger?.log(
+                    LogLevel.ERROR,
+                    LogCategory.KIOSK_POLICY,
+                    "Failed to launch Home settings intent: ${e.message}"
+                )
+                Toast.makeText(ctx, "Could not open Home Settings: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
 
