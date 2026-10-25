@@ -48,25 +48,17 @@ class StartupDecisionEngine(
     }
 
     private fun evaluateRemoteUrl(url: String, configuration: KioskConfiguration): StartupState {
-        val trimmed = url.trim()
-        if (trimmed.isEmpty()) {
-            return StartupState.RecoverableConfigurationError(
-                error = ConfigurationError.InvalidUrl(url, "Configured URL cannot be empty or whitespace"),
-                fallbackConfiguration = configuration
-            )
+        return when (val result = com.screensmithy.app.domain.url.UrlValidator.validate(url)) {
+            is com.screensmithy.app.domain.url.UrlValidationResult.Valid -> {
+                StartupState.ReadyToPresent(configuration)
+            }
+            is com.screensmithy.app.domain.url.UrlValidationResult.Invalid -> {
+                StartupState.RecoverableConfigurationError(
+                    error = ConfigurationError.InvalidUrl(url, result.userMessage),
+                    fallbackConfiguration = configuration
+                )
+            }
         }
-
-        val hasValidScheme = trimmed.startsWith("https://", ignoreCase = true) ||
-                trimmed.startsWith("http://", ignoreCase = true)
-
-        if (!hasValidScheme) {
-            return StartupState.RecoverableConfigurationError(
-                error = ConfigurationError.InvalidUrl(url, "URL scheme must be http or https"),
-                fallbackConfiguration = configuration
-            )
-        }
-
-        return StartupState.ReadyToPresent(configuration)
     }
 
     private fun evaluateLocalHtml(relativePath: String, configuration: KioskConfiguration): StartupState {
