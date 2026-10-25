@@ -60,12 +60,18 @@ import com.screensmithy.app.domain.wizard.SetupWizardSnapshot
 import com.screensmithy.app.data.devicepolicy.AndroidDeviceOwnerPolicyManager
 import com.screensmithy.app.domain.devicepolicy.DeviceOwnerPolicyManager
 import com.screensmithy.app.domain.devicepolicy.PolicyExecutionResult
+import com.screensmithy.app.domain.recovery.ErrorClassifier
+import com.screensmithy.app.domain.recovery.NonRetryableReason
+import com.screensmithy.app.domain.recovery.RecoveryAction
+import com.screensmithy.app.domain.recovery.StartupRecoveryCoordinator
 import com.screensmithy.app.domain.wizard.WizardStep
 import com.screensmithy.app.ui.admin.AdminContentDialog
 import com.screensmithy.app.ui.admin.AdminDashboardDialog
 import com.screensmithy.app.ui.auth.AdminPinDialog
 import com.screensmithy.app.ui.auth.PinDialogMode
 import com.screensmithy.app.ui.importer.HtmlDocumentPickerContract
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
@@ -111,6 +117,10 @@ class MainActivity : AppCompatActivity() {
     private var activeAdminDialog: AdminContentDialog? = null
     private var activeDashboardDialog: AdminDashboardDialog? = null
 
+    // Recovery & Bounded Retry Coordinator
+    private lateinit var recoveryCoordinator: StartupRecoveryCoordinator
+    private var retryJob: Job? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -148,6 +158,7 @@ class MainActivity : AppCompatActivity() {
 
         deviceInfoProvider = SystemDeviceManagementInfoProvider(this)
         policyManager = AndroidDeviceOwnerPolicyManager(this)
+        recoveryCoordinator = StartupRecoveryCoordinator()
 
         diagnosticLogger = BoundedDiagnosticLogger()
         diagnosticInspector = AndroidSystemDiagnosticInspector(
@@ -237,12 +248,18 @@ class MainActivity : AppCompatActivity() {
                     lifecycleScope.launch {
                         val config = configRepository.getConfiguration()
                         if (config.reloadOnNetworkRestored && config.isSetupCompleted && !isPreviewing) {
-                            diagnosticLogger.log(
-                                LogLevel.INFO,
-                                LogCategory.NETWORK,
-                                "Network restored; reloading active kiosk content"
-                            )
-                            binding.kioskWebView.loadContent(config.contentSource, config.navigationPolicy)
+                            val action = recoveryCoordinator.onNetworkRestored()
+                            if (action is RecoveryAction.ProceedWithLoad) {
+                                retryJob?.cancel()
+                                diagnosticLogger.log(
+                                    LogLevel.INFO,
+                                    LogCategory.NETWORK,
+                                    "Network restored; triggering automatic recovery of live kiosk presentation"
+                                )
+                                binding.cardError.visibility = View.GONE
+                                binding.kioskWebView.visibility = View.VISIBLE
+                                binding.kioskWebView.loadContent(action.source, action.policy)
+                            }
                         }
                     }
                 }
@@ -401,33 +418,44 @@ class MainActivity : AppCompatActivity() {
             }
 
             is StartupState.ReadyToPresent -> {
-                // Fullscreen kiosk presentation
-                // Note: NO admin buttons are displayed on this screen!
-                binding.includeSetupWizard.wizardRoot.visibility = View.GONE
-                binding.cardError.visibility = View.GONE
-                binding.kioskWebView.visibility = View.VISIBLE
+                val action = recoveryCoordinator.evaluateLoad(config.contentSource, config.navigationPolicy)
+                when (action) {
+                    is RecoveryAction.ProceedWithLoad -> {
+                        retryJob?.cancel()
+                        binding.includeSetupWizard.wizardRoot.visibility = View.GONE
+                        binding.cardError.visibility = View.GONE
+                        binding.kioskWebView.visibility = View.VISIBLE
 
-                binding.kioskWebView.loadContent(
-                    source = config.contentSource,
-                    policy = config.navigationPolicy
-                )
+                        binding.kioskWebView.loadContent(
+                            source = action.source,
+                            policy = action.policy
+                        )
 
-                // Device Owner Managed Kiosk: If eligible, enter Lock Task Mode safely
-                checkAndEnterManagedLockTask()
+                        checkAndEnterManagedLockTask()
+                    }
+                    is RecoveryAction.SkipDuplicateLoad -> {
+                        diagnosticLogger.log(
+                            LogLevel.INFO,
+                            LogCategory.STARTUP,
+                            "Idempotent startup: active presentation matches configuration; skipping duplicate load"
+                        )
+                        checkAndEnterManagedLockTask()
+                    }
+                    else -> Unit
+                }
             }
 
             is StartupState.RecoverableConfigurationError -> {
+                retryJob?.cancel()
                 binding.includeSetupWizard.wizardRoot.visibility = View.GONE
                 binding.kioskWebView.visibility = View.GONE
                 binding.cardError.visibility = View.VISIBLE
 
-                binding.txtErrorDetails.text = when (val err = state.error) {
-                    is ConfigurationError.InvalidUrl -> "Invalid URL: ${err.reason}"
-                    is ConfigurationError.MissingLocalFile -> "Missing HTML Document: ${err.reason}"
-                    is ConfigurationError.UnsupportedSchemaVersion -> "Unsupported schema version: ${err.foundVersion}"
-                    is ConfigurationError.CorruptedData -> "Data corruption detected: ${err.message}"
-                    is ConfigurationError.InvalidConfigurationParameter -> "Configuration error: ${err.parameterName} (${err.reason})"
-                }
+                val classification = ErrorClassifier.classifyConfigurationError(state.error)
+                binding.txtErrorTitle.text = "Configuration Error"
+                binding.txtErrorDetails.text = classification.userMessage
+                binding.txtErrorRecoveryStatus.visibility = View.GONE
+                binding.btnErrorRetry.visibility = View.GONE
                 binding.btnErrorOpenAdmin.requestFocus()
             }
         }
@@ -729,6 +757,16 @@ class MainActivity : AppCompatActivity() {
         binding.btnErrorOpenAdmin.setOnClickListener {
             triggerAdminPinGate()
         }
+        binding.btnErrorRetry.setOnClickListener {
+            retryJob?.cancel()
+            lifecycleScope.launch {
+                val config = configRepository.getConfiguration()
+                recoveryCoordinator.evaluateLoad(config.contentSource, config.navigationPolicy, force = true)
+                binding.cardError.visibility = View.GONE
+                binding.kioskWebView.visibility = View.VISIBLE
+                binding.kioskWebView.loadContent(config.contentSource, config.navigationPolicy)
+            }
+        }
     }
 
     // =========================================================================
@@ -879,6 +917,8 @@ class MainActivity : AppCompatActivity() {
                             lastLoadSuccess = true,
                             lastErrorMessage = null
                         )
+                        recoveryCoordinator.onLoadSuccess(state.url)
+                        binding.cardError.visibility = View.GONE
                         diagnosticLogger.log(
                             LogLevel.INFO,
                             LogCategory.RENDERER,
@@ -898,6 +938,8 @@ class MainActivity : AppCompatActivity() {
                         )
                         if (isPreviewing) {
                             contentController.reportRendererFailure("Preview Error [${state.errorCode}]: ${state.description}")
+                        } else {
+                            handleRendererFailure(state)
                         }
                     }
                     is RendererState.HttpError -> {
@@ -912,6 +954,8 @@ class MainActivity : AppCompatActivity() {
                         )
                         if (isPreviewing) {
                             contentController.reportRendererFailure("Preview HTTP Error [${state.statusCode}]")
+                        } else {
+                            handleRendererFailure(state)
                         }
                     }
                     is RendererState.TlsError -> {
@@ -926,6 +970,8 @@ class MainActivity : AppCompatActivity() {
                         )
                         if (isPreviewing) {
                             contentController.reportRendererFailure("Preview TLS Error: ${state.errorDescription}")
+                        } else {
+                            handleRendererFailure(state)
                         }
                     }
                     is RendererState.MissingLocalContent -> {
@@ -938,6 +984,11 @@ class MainActivity : AppCompatActivity() {
                             LogCategory.RENDERER,
                             "Missing local file: ${state.relativePath}"
                         )
+                        if (isPreviewing) {
+                            contentController.reportRendererFailure("Preview missing local file: ${state.relativePath}")
+                        } else {
+                            handleRendererFailure(state)
+                        }
                     }
                     is RendererState.RendererCrash -> {
                         currentRuntimeStatus = currentRuntimeStatus.copy(
@@ -949,6 +1000,11 @@ class MainActivity : AppCompatActivity() {
                             LogCategory.RENDERER,
                             "Renderer process terminated (didCrash=${state.didCrash})"
                         )
+                        if (isPreviewing) {
+                            contentController.reportRendererFailure("Renderer process terminated")
+                        } else {
+                            handleRendererFailure(state)
+                        }
                     }
                     is RendererState.Idle -> Unit
                 }
@@ -985,6 +1041,65 @@ class MainActivity : AppCompatActivity() {
                         )
                     }
                 }
+            }
+        }
+    }
+
+    private fun handleRendererFailure(state: RendererState) {
+        retryJob?.cancel()
+        lifecycleScope.launch {
+            val config = configRepository.getConfiguration()
+            val action = recoveryCoordinator.onLoadError(state, config.retryPolicy)
+            when (action) {
+                is RecoveryAction.ScheduleRetry -> {
+                    binding.kioskWebView.visibility = View.GONE
+                    binding.cardError.visibility = View.VISIBLE
+                    binding.txtErrorTitle.text = "Connection Error"
+                    binding.txtErrorDetails.text = action.reason
+                    binding.txtErrorRecoveryStatus.visibility = View.VISIBLE
+                    binding.txtErrorRecoveryStatus.text = "Retrying in ${action.delayMs / 1000}s (attempt ${action.attempt} of ${action.maxRetries})..."
+                    binding.btnErrorRetry.visibility = View.VISIBLE
+                    binding.btnErrorOpenAdmin.requestFocus()
+
+                    retryJob = lifecycleScope.launch {
+                        delay(action.delayMs)
+                        binding.txtErrorRecoveryStatus.text = "Retrying..."
+                        binding.kioskWebView.visibility = View.VISIBLE
+                        binding.cardError.visibility = View.GONE
+                        binding.kioskWebView.loadContent(action.source, action.policy)
+                    }
+                }
+
+                is RecoveryAction.PermanentFailure -> {
+                    binding.kioskWebView.visibility = View.GONE
+                    binding.cardError.visibility = View.VISIBLE
+                    binding.txtErrorTitle.text = if (action.nonRetryableReason == NonRetryableReason.TLS_FAILURE) {
+                        "Security Certificate Error"
+                    } else {
+                        "Playback Error"
+                    }
+                    binding.txtErrorDetails.text = action.reason
+                    binding.txtErrorRecoveryStatus.visibility = View.GONE
+                    if (action.nonRetryableReason == NonRetryableReason.TLS_FAILURE ||
+                        action.nonRetryableReason == NonRetryableReason.INVALID_CONFIGURATION
+                    ) {
+                        binding.btnErrorRetry.visibility = View.GONE
+                    } else {
+                        binding.btnErrorRetry.visibility = View.VISIBLE
+                    }
+                    binding.btnErrorOpenAdmin.requestFocus()
+                }
+
+                is RecoveryAction.RecreateRenderer -> {
+                    diagnosticLogger.log(
+                        LogLevel.WARN,
+                        LogCategory.RENDERER,
+                        "Recovering from renderer termination: detaching, recreating, and reloading WebView"
+                    )
+                    binding.kioskWebView.recoverFromRendererCrash(config.contentSource, config.navigationPolicy)
+                }
+
+                else -> Unit
             }
         }
     }
@@ -1031,6 +1146,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        retryJob?.cancel()
         try {
             networkCallback?.let { connectivityManager?.unregisterNetworkCallback(it) }
         } catch (_: Exception) {}
