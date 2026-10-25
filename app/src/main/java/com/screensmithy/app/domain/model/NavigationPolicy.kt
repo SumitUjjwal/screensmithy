@@ -46,4 +46,8 @@ data class NavigationPolicy(
         } else {
             null
         }
+
+    companion object {
+        val DEFAULT = NavigationPolicy()
+    }
 }
