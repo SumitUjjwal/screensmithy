@@ -1,6 +1,7 @@
 package com.screensmithy.app
 
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -314,8 +315,20 @@ class MainActivity : AppCompatActivity() {
                         onBackPressedDispatcher.onBackPressed()
                     }
                 } else {
-                    // In presentation mode: do not exit on accidental back press
-                    // (Managed kiosk or fullscreen presentation)
+                    // In presentation mode:
+                    // 1. If WebView has navigation history, navigate back within the content.
+                    // 2. Otherwise, safely remain on the start page without exiting the app
+                    //    or exposing any administrative controls.
+                    if (binding.kioskWebView.canGoBack()) {
+                        binding.kioskWebView.goBack()
+                        diagnosticLogger.log(
+                            LogLevel.INFO,
+                            LogCategory.RENDERER,
+                            "Navigated back in WebView history via remote Back key"
+                        )
+                    } else {
+                        // Accidental Back on root start page: safely ignore to prevent exit or settings exposure
+                    }
                 }
             }
         })
@@ -952,6 +965,39 @@ class MainActivity : AppCompatActivity() {
                         )
                     }
                 }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding.kioskWebView.resumeTimers()
+        lifecycleScope.launch {
+            val config = configRepository.getConfiguration()
+            applyDisplayPreferences(config)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        diagnosticLogger.log(
+            LogLevel.INFO,
+            LogCategory.STARTUP,
+            "MainActivity resumed via new intent (action=${intent?.action})"
+        )
+        lifecycleScope.launch {
+            val config = configRepository.getConfiguration()
+            applyDisplayPreferences(config)
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            lifecycleScope.launch {
+                val config = configRepository.getConfiguration()
+                applyDisplayPreferences(config)
             }
         }
     }

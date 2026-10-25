@@ -158,17 +158,46 @@
                     app:layout_constraintStart_toEndOf="@id/lblDiagLauncher"
                     app:layout_constraintTop_toTopOf="@id/lblDiagLauncher" />
 
+                <TextView
+                    android:id="@+id/txtLauncherGuidance"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="In Normal Mode, Android TV requires user confirmation in settings to set default Home launcher."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/lblDiagLauncher"
+                    app:layout_constraintTop_toBottomOf="@id/valDiagLauncher" />
+
+                <Button
+                    android:id="@+id/btnConfigureDefaultLauncher"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:paddingHorizontal="14dp"
+                    android:text="🏠 Configure Default Home App"
+                    android:textAllCaps="false"
+                    android:textColor="@color/brand_accent"
+                    android:textSize="12sp"
+                    app:backgroundTint="@null"
+                    app:layout_constraintStart_toEndOf="@id/lblDiagLauncher"
+                    app:layout_constraintTop_toBottomOf="@id/txtLauncherGuidance" />
+
                 <!-- Row 3: Lock Task & Device Policy -->
                 <TextView
                     android:id="@+id/lblDiagLockTask"
                     android:layout_width="140dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="10dp"
                     android:text="Lock Task State:"
                     android:textColor="@color/text_muted"
                     android:textSize="13sp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/valDiagLauncher" />
+                    app:layout_constraintTop_toBottomOf="@id/btnConfigureDefaultLauncher" />
 
                 <TextView
                     android:id="@+id/valDiagLockTask"
@@ -274,6 +303,29 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@id/lblDiagDevice"
                     app:layout_constraintTop_toTopOf="@id/lblDiagDevice" />
+
+                <!-- Row 8: Normal Mode Limitations & Policy -->
+                <TextView
+                    android:id="@+id/lblDiagLimitations"
+                    android:layout_width="140dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Normal Mode Policy:"
+                    android:textColor="@color/text_muted"
+                    android:textSize="13sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/valDiagDevice" />
+
+                <TextView
+                    android:id="@+id/valDiagLimitations"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="• Standard installation. System settings and other apps remain accessible.\n• OEM remote buttons (Netflix, YouTube) cannot be intercepted.\n• Pressing Back navigates within page history or remains safely on start page."
+                    android:textColor="@color/text_muted"
+                    android:textSize="12sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/lblDiagLimitations"
+                    app:layout_constraintTop_toTopOf="@id/lblDiagLimitations" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <!-- SECTION 2: GENUINELY IMPLEMENTABLE SETTINGS -->

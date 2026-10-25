@@ -71,20 +71,7 @@ class AndroidSystemDiagnosticInspector(
         }
 
         // Default Launcher check
-        val defaultLauncher = launcherChecker?.invoke() ?: try {
-            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_HOME)
-            }
-            val resolveInfo = packageManager.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY)
-            val currentPkg = resolveInfo?.activityInfo?.packageName
-            if (currentPkg == packageName) {
-                DefaultLauncherStatus.Yes
-            } else {
-                DefaultLauncherStatus.No(currentPkg)
-            }
-        } catch (_: Exception) {
-            DefaultLauncherStatus.Unknown
-        }
+        val defaultLauncher = launcherChecker?.invoke() ?: com.screensmithy.app.domain.launcher.HomeLauncherManager(context).resolveDefaultHomeLauncher()
 
         // Network status check
         val networkStatus = try {

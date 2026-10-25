@@ -177,6 +177,31 @@ class KioskWebView @JvmOverloads constructor(
     }
 
     /**
+     * Returns true if the managed WebView has a back history item.
+     */
+    fun canGoBack(): Boolean = managedWebView?.canGoBack() == true
+
+    /**
+     * Navigates back in the managed WebView history if available.
+     * Returns true if navigation occurred, false otherwise.
+     */
+    fun goBack(): Boolean {
+        return if (canGoBack()) {
+            managedWebView?.goBack()
+            true
+        } else {
+            false
+        }
+    }
+
+    /**
+     * Resets the presentation back to the initial configured start page.
+     */
+    fun returnToStartPage() {
+        loadContent(currentSource, currentPolicy)
+    }
+
+    /**
      * Pauses WebView timers and media processing when host Activity pauses.
      */
     fun pauseTimers() {
