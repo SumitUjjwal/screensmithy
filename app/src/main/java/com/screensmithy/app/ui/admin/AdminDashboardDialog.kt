@@ -22,8 +22,11 @@ import com.screensmithy.app.domain.diagnostics.LogCategory
 import com.screensmithy.app.domain.diagnostics.LogLevel
 import com.screensmithy.app.domain.diagnostics.SystemDiagnosticInspector
 import com.screensmithy.app.domain.diagnostics.SystemDiagnosticSnapshot
+import com.screensmithy.app.MainActivity
 import com.screensmithy.app.domain.launcher.HomeLauncherManager
+import com.screensmithy.app.domain.model.DisplayMargins
 import com.screensmithy.app.domain.repository.ConfigurationRepository
+import com.screensmithy.app.ui.display.DisplayMarginApplicator
 import kotlinx.coroutines.launch
 
 /**
@@ -78,12 +81,30 @@ class AdminDashboardDialog : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Apply authoritative display margins to dialog root
+        val margins = (activity as? MainActivity)?.currentDisplayMargins ?: DisplayMargins.ZERO
+        DisplayMarginApplicator.applyMargins(binding.dialogDashboardRoot, margins, basePaddingDp = 24)
+
         startSessionTimer()
         setupActionListeners()
         loadDiagnosticsAndSettings()
 
-        // Set initial TV remote focus
-        binding.btnReloadLiveContent.requestFocus()
+        // Reset scroll position to top and set initial TV remote focus on top-most control
+        resetScrollAndInitialFocus()
+    }
+
+    private fun resetScrollAndInitialFocus() {
+        binding.scrollDashboard.post {
+            if (_binding != null) {
+                binding.scrollDashboard.scrollTo(0, 0)
+                // Logical focus order: focus first enabled interactive element at top
+                if (binding.btnConfigureDefaultLauncher.isEnabled && binding.btnConfigureDefaultLauncher.visibility == View.VISIBLE) {
+                    binding.btnConfigureDefaultLauncher.requestFocus()
+                } else if (binding.btnToggleKeepAwake.isEnabled && binding.btnToggleKeepAwake.visibility == View.VISIBLE) {
+                    binding.btnToggleKeepAwake.requestFocus()
+                }
+            }
+        }
     }
 
     private fun startSessionTimer() {
@@ -121,6 +142,11 @@ class AdminDashboardDialog : DialogFragment() {
             currentSnapshot = snapshot
             renderDiagnostics(snapshot)
             renderSettings(snapshot)
+            if (_binding != null) {
+                binding.scrollDashboard.post {
+                    binding.scrollDashboard.scrollTo(0, 0)
+                }
+            }
         }
     }
 
@@ -237,6 +263,27 @@ class AdminDashboardDialog : DialogFragment() {
         updateToggleUi(binding.btnToggleKeepAwake, snapshot.keepScreenAwake)
         updateToggleUi(binding.btnToggleImmersive, snapshot.immersiveSticky)
         updateToggleUi(binding.btnToggleReloadOnNetwork, snapshot.reloadOnNetworkRestored)
+        updateDisplayMarginsUi()
+    }
+
+    private fun updateDisplayMarginsUi() {
+        val repo = configRepository ?: return
+        lifecycleScope.launch {
+            val config = repo.getConfiguration()
+            val m = config.displayPreferences.displayMargins
+            if (_binding != null) {
+                binding.txtDisplayMarginsSummary.text = if (m.isZero) {
+                    "Zero margins (Full display). 0% Top, 0% Bottom, 0% Left, 0% Right"
+                } else {
+                    "Active margins: ${m.topPercent}% Top, ${m.bottomPercent}% Bottom, ${m.leftPercent}% Left, ${m.rightPercent}% Right"
+                }
+                binding.btnConfigureDisplayMargins.text = if (m.isZero) {
+                    "📐 Configure Margins"
+                } else {
+                    "📐 Margins (${m.topPercent}%, ${m.bottomPercent}%, ${m.leftPercent}%, ${m.rightPercent}%)"
+                }
+            }
+        }
     }
 
     private fun updateToggleUi(button: android.widget.Button, isEnabled: Boolean) {
@@ -301,6 +348,34 @@ class AdminDashboardDialog : DialogFragment() {
                     LogCategory.CONFIG,
                     "Reload on network restored setting updated to: $newVal"
                 )
+            }
+        }
+
+        // Action: Configure Display Margins
+        binding.btnConfigureDisplayMargins.setOnClickListener {
+            lifecycleScope.launch {
+                val current = repo.getConfiguration()
+                val currentMargins = current.displayPreferences.displayMargins
+                val marginsDialog = DisplayMarginsDialog.newInstance(
+                    initialMargins = currentMargins,
+                    onMarginsApplied = { newMargins ->
+                        lifecycleScope.launch {
+                            repo.updateConfiguration { c ->
+                                c.copy(
+                                    displayPreferences = c.displayPreferences.copy(
+                                        displayMargins = newMargins
+                                    )
+                                )
+                            }
+                            updateDisplayMarginsUi()
+                            // Update this dashboard dialog's root padding
+                            val act = activity as? MainActivity
+                            val updatedMargins = act?.currentDisplayMargins ?: newMargins
+                            DisplayMarginApplicator.applyMargins(binding.dialogDashboardRoot, updatedMargins, basePaddingDp = 24)
+                        }
+                    }
+                )
+                marginsDialog.show(parentFragmentManager, DisplayMarginsDialog.TAG)
             }
         }
 

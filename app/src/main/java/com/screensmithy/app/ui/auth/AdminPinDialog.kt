@@ -50,7 +50,7 @@ class AdminPinDialog : DialogFragment() {
     private var onPinSetupCompleted: (() -> Unit)? = null
     private var onCancelled: (() -> Unit)? = null
 
-    private val pinBuilder = StringBuilder(PinSecurity.MAX_PIN_LENGTH)
+    private val pinBuilder = StringBuilder(PinSecurity.PIN_LENGTH)
     private var initialSetupPin: CharArray? = null
     private var isConfirmStep: Boolean = false
     private var lockoutTimer: CountDownTimer? = null
@@ -86,6 +86,11 @@ class AdminPinDialog : DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Apply authoritative display margins to dialog root
+        val margins = (activity as? com.screensmithy.app.MainActivity)?.currentDisplayMargins ?: com.screensmithy.app.domain.model.DisplayMargins.ZERO
+        com.screensmithy.app.ui.display.DisplayMarginApplicator.applyMargins(binding.dialogPinRoot, margins, basePaddingDp = 24)
+
         setupKeypadListeners()
         setupActionListeners()
         refreshUiForCurrentState()
@@ -134,7 +139,7 @@ class AdminPinDialog : DialogFragment() {
     }
 
     private fun appendDigit(digit: Char) {
-        if (pinBuilder.length < PinSecurity.MAX_PIN_LENGTH) {
+        if (pinBuilder.length < PinSecurity.PIN_LENGTH) {
             pinBuilder.append(digit)
             updateMaskedDisplay()
             hideError()
@@ -158,33 +163,28 @@ class AdminPinDialog : DialogFragment() {
     private fun updateMaskedDisplay() {
         val length = pinBuilder.length
         val masked = buildString {
-            for (i in 0 until PinSecurity.MIN_PIN_LENGTH) {
+            for (i in 0 until PinSecurity.PIN_LENGTH) {
                 if (i < length) append("● ") else append("_ ")
-            }
-            if (length > PinSecurity.MIN_PIN_LENGTH) {
-                for (i in PinSecurity.MIN_PIN_LENGTH until length) {
-                    append("● ")
-                }
             }
         }.trimEnd()
 
         binding.txtMaskedPin.text = masked
-        binding.btnSubmit.isEnabled = length >= PinSecurity.MIN_PIN_LENGTH
+        binding.btnSubmit.isEnabled = length == PinSecurity.PIN_LENGTH
     }
 
     private fun refreshUiForCurrentState() {
         when (mode) {
             PinDialogMode.VERIFY -> {
                 binding.txtPinTitle.text = "Admin Authentication"
-                binding.txtPinSubtitle.text = "Enter your 6-digit PIN to access settings"
+                binding.txtPinSubtitle.text = "Enter your 4-digit PIN to access settings"
             }
             PinDialogMode.SETUP -> {
                 if (isConfirmStep) {
                     binding.txtPinTitle.text = "Confirm Admin PIN"
-                    binding.txtPinSubtitle.text = "Re-enter your PIN to verify"
+                    binding.txtPinSubtitle.text = "Re-enter your 4-digit PIN to verify"
                 } else {
                     binding.txtPinTitle.text = "Create Admin PIN"
-                    binding.txtPinSubtitle.text = "Enter a 6-12 digit PIN for admin security"
+                    binding.txtPinSubtitle.text = "Enter a 4-digit PIN for admin security"
                 }
             }
         }
@@ -192,8 +192,8 @@ class AdminPinDialog : DialogFragment() {
     }
 
     private fun handleSubmit() {
-        if (pinBuilder.length < PinSecurity.MIN_PIN_LENGTH) {
-            showError("PIN must be at least ${PinSecurity.MIN_PIN_LENGTH} digits.")
+        if (pinBuilder.length != PinSecurity.PIN_LENGTH) {
+            showError("PIN must be exactly ${PinSecurity.PIN_LENGTH} digits.")
             return
         }
 
@@ -318,7 +318,7 @@ class AdminPinDialog : DialogFragment() {
         binding.btnKey9.isEnabled = enabled
         binding.btnClear.isEnabled = enabled
         binding.btnDelete.isEnabled = enabled
-        binding.btnSubmit.isEnabled = enabled && pinBuilder.length >= PinSecurity.MIN_PIN_LENGTH
+        binding.btnSubmit.isEnabled = enabled && pinBuilder.length == PinSecurity.PIN_LENGTH
     }
 
     private fun showError(message: String) {

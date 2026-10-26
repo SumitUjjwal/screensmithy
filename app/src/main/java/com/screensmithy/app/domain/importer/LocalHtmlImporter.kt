@@ -155,6 +155,83 @@ class LocalHtmlImporter(
     }
 
     /**
+     * Imports an already-staged HTML document (e.g. from Wi-Fi transfer) into app-private storage.
+     * Validates extension, file size, non-emptiness, computes SHA-256 digest, and atomically
+     * moves the file into `imported_html/<documentId>/<sanitizedFileName>.html`.
+     *
+     * @param stagedFile Temporary file written during the transfer session.
+     * @param originalFileName Original file name provided by the sender.
+     * @return [ImportResult.Success] with metadata, or [ImportResult.Failure].
+     */
+    suspend fun importStagedFile(stagedFile: File, originalFileName: String): ImportResult = withContext(ioDispatcher) {
+        val rawFileName = originalFileName.ifBlank { "imported_content.html" }
+
+        // 1. Validate file extension
+        val sanitizedExtension = getSanitizedExtension(rawFileName)
+        if (sanitizedExtension !in ALLOWED_EXTENSIONS) {
+            safeDelete(stagedFile)
+            return@withContext ImportResult.Failure(
+                ImportError.InvalidExtension(rawFileName, ALLOWED_EXTENSIONS)
+            )
+        }
+
+        // 2. Validate file existence and emptiness
+        if (!stagedFile.exists() || stagedFile.length() == 0L) {
+            safeDelete(stagedFile)
+            return@withContext ImportResult.Failure(ImportError.EmptyFile(rawFileName))
+        }
+
+        val fileSize = stagedFile.length()
+        // 3. Enforce maximum file size
+        if (fileSize > LocalHtmlMetadata.MAX_IMPORT_SIZE_BYTES) {
+            safeDelete(stagedFile)
+            return@withContext ImportResult.Failure(
+                ImportError.FileTooLarge(fileSize, LocalHtmlMetadata.MAX_IMPORT_SIZE_BYTES)
+            )
+        }
+
+        try {
+            // 4. Calculate SHA-256 digest
+            val digest = MessageDigest.getInstance("SHA-256")
+            stagedFile.inputStream().use { input ->
+                val buffer = ByteArray(BUFFER_SIZE)
+                var bytesRead: Int
+                while (input.read(buffer).also { bytesRead = it } != -1) {
+                    digest.update(buffer, 0, bytesRead)
+                }
+            }
+
+            // 5. Prepare final destination and promote atomically
+            val documentId = generateDocumentId()
+            val sanitizedFileName = sanitizeFileName(rawFileName)
+            val documentDir = File(File(appFilesDir, ROOT_CONTENT_DIR), documentId).apply { mkdirs() }
+            val destinationFile = File(documentDir, sanitizedFileName)
+
+            promoteFile(stagedFile, destinationFile)
+
+            val checksum = digest.digest().joinToString("") { "%02x".format(it) }
+            val relativePath = "$ROOT_CONTENT_DIR/$documentId/$sanitizedFileName"
+
+            val metadata = LocalHtmlMetadata(
+                documentId = documentId,
+                displayName = rawFileName,
+                relativePath = relativePath,
+                sizeBytes = fileSize,
+                importedAtEpochMs = System.currentTimeMillis(),
+                sha256Checksum = checksum
+            )
+
+            ImportResult.Success(metadata)
+        } catch (e: IOException) {
+            safeDelete(stagedFile)
+            ImportResult.Failure(ImportError.ReadError(e.message ?: "I/O error during staged file import", e))
+        } catch (e: Exception) {
+            safeDelete(stagedFile)
+            ImportResult.Failure(ImportError.StorageError(e.message ?: "Unexpected error during staged file import", e))
+        }
+    }
+
+    /**
      * Cleans up orphaned staging files older than [maxAgeMs].
      * Never deletes files outside the dedicated staging directory.
      */

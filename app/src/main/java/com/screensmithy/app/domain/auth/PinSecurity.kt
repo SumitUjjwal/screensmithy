@@ -31,8 +31,9 @@ data class HashedPin(
  */
 object PinSecurity {
 
-    const val MIN_PIN_LENGTH: Int = 6
-    const val MAX_PIN_LENGTH: Int = 12
+    const val PIN_LENGTH: Int = 4
+    const val MIN_PIN_LENGTH: Int = 4
+    const val MAX_PIN_LENGTH: Int = 4
     const val DEFAULT_ITERATIONS: Int = 100_000
     const val MIN_ITERATIONS: Int = 50_000
     private const val SALT_BYTES: Int = 16
@@ -42,14 +43,14 @@ object PinSecurity {
     private val secureRandom = SecureRandom()
 
     /**
-     * Validates PIN format. PIN must contain only numeric digits and meet length constraints.
+     * Validates PIN format. PIN must contain exactly [PIN_LENGTH] (4) numeric digits.
      */
     fun validatePinFormat(pin: CharArray): PinValidationResult {
-        if (pin.size < MIN_PIN_LENGTH) {
-            return PinValidationResult.TooShort(MIN_PIN_LENGTH)
+        if (pin.size < PIN_LENGTH) {
+            return PinValidationResult.TooShort(PIN_LENGTH)
         }
-        if (pin.size > MAX_PIN_LENGTH) {
-            return PinValidationResult.TooLong(MAX_PIN_LENGTH)
+        if (pin.size > PIN_LENGTH) {
+            return PinValidationResult.TooLong(PIN_LENGTH)
         }
         if (pin.any { !it.isDigit() }) {
             return PinValidationResult.NonNumeric

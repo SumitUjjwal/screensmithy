@@ -17,6 +17,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -44,10 +45,12 @@ import com.screensmithy.app.domain.diagnostics.SystemDiagnosticInspector
 import com.screensmithy.app.domain.importer.ImportResult
 import com.screensmithy.app.domain.importer.LocalHtmlImporter
 import com.screensmithy.app.domain.model.ContentSource
+import com.screensmithy.app.domain.model.DisplayMargins
 import com.screensmithy.app.domain.model.KioskConfiguration
 import com.screensmithy.app.domain.model.LocalHtmlMetadata
 import com.screensmithy.app.domain.model.NavigationMode
 import com.screensmithy.app.domain.model.NavigationPolicy
+import com.screensmithy.app.ui.display.DisplayMarginApplicator
 import com.screensmithy.app.domain.model.RuntimeStatus
 import com.screensmithy.app.domain.renderer.RendererEvent
 import com.screensmithy.app.domain.renderer.RendererState
@@ -69,7 +72,9 @@ import com.screensmithy.app.ui.admin.AdminContentDialog
 import com.screensmithy.app.ui.admin.AdminDashboardDialog
 import com.screensmithy.app.ui.auth.AdminPinDialog
 import com.screensmithy.app.ui.auth.PinDialogMode
+import android.app.AlertDialog
 import com.screensmithy.app.ui.importer.HtmlDocumentPickerContract
+import com.screensmithy.app.ui.transfer.WifiTransferDialog
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -114,8 +119,11 @@ class MainActivity : AppCompatActivity() {
 
     // State Tracking
     private var isPreviewing: Boolean = false
+    private var previewingSource: ContentSource? = null
+    private var previewingPolicy: NavigationPolicy? = null
     private var activeAdminDialog: AdminContentDialog? = null
     private var activeDashboardDialog: AdminDashboardDialog? = null
+    private var activeWifiTransferDialog: WifiTransferDialog? = null
 
     // Recovery & Bounded Retry Coordinator
     private lateinit var recoveryCoordinator: StartupRecoveryCoordinator
@@ -125,6 +133,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.mainRoot) { _, insets ->
+            DisplayMarginApplicator.applyMargins(binding.mainRoot, currentDisplayMargins, insets = insets)
+            insets
+        }
 
         initServices()
         initFilePicker()
@@ -289,18 +302,38 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun requestHtmlDocumentPick() {
+        if (HtmlDocumentPickerContract.isAvailable(this)) {
+            htmlPickerLauncher.launch(Unit)
+        } else {
+            showNoDocumentPickerAvailableDialog()
+        }
+    }
+
+    private fun showNoDocumentPickerAvailableDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("No Document Picker App Installed")
+            .setMessage("Android TV does not include a built-in file manager or document picker application.\n\nYou can transfer HTML documents directly from another device (phone, laptop, or PC) over local Wi-Fi without installing any additional apps.")
+            .setPositiveButton("Transfer over Wi-Fi") { _, _ ->
+                openWifiTransferDialog()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun handleLocalHtmlImported(metadata: LocalHtmlMetadata) {
+        if (binding.includeSetupWizard.wizardRoot.visibility == View.VISIBLE) {
+            wizardManager.setLocalHtml(metadata)
+        }
+        activeAdminDialog?.onLocalHtmlImported(metadata)
+    }
+
     private fun handleHtmlDocumentPicked(uri: Uri) {
         lifecycleScope.launch {
             val result = localHtmlImporter.importDocument(uri.toString())
             when (result) {
                 is ImportResult.Success -> {
-                    val metadata = result.metadata
-                    // If in wizard, update wizard state
-                    if (binding.includeSetupWizard.wizardRoot.visibility == View.VISIBLE) {
-                        wizardManager.setLocalHtml(metadata)
-                    }
-                    // If in admin dialog, inform dialog
-                    activeAdminDialog?.onLocalHtmlImported(metadata)
+                    handleLocalHtmlImported(result.metadata)
                 }
                 is ImportResult.Failure -> {
                     val errorMsg = result.error.userMessage
@@ -375,6 +408,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    var currentDisplayMargins: DisplayMargins = DisplayMargins.ZERO
+        private set
+
+    fun previewDisplayMargins(margins: DisplayMargins) {
+        DisplayMarginApplicator.applyMargins(binding.mainRoot, margins)
+    }
+
+    fun restorePersistedDisplayMargins() {
+        DisplayMarginApplicator.applyMargins(binding.mainRoot, currentDisplayMargins)
+    }
+
     private fun applyDisplayPreferences(config: KioskConfiguration) {
         if (config.displayPreferences.keepScreenAwake) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -390,20 +434,23 @@ class MainActivity : AppCompatActivity() {
         } else {
             insetsController.show(WindowInsetsCompat.Type.systemBars())
         }
+
+        currentDisplayMargins = config.displayPreferences.displayMargins
+        DisplayMarginApplicator.applyMargins(binding.mainRoot, currentDisplayMargins)
     }
 
     private fun handleStartupState(state: StartupState, config: KioskConfiguration) {
         when (state) {
             is StartupState.Initializing -> {
-                // Show clean dark background while loading
+                // Show clean dark background while loading, keeping WebView measured
                 binding.includeSetupWizard.wizardRoot.visibility = View.GONE
-                binding.kioskWebView.visibility = View.GONE
+                binding.kioskWebView.visibility = View.INVISIBLE
                 binding.cardError.visibility = View.GONE
             }
 
             is StartupState.SetupRequired -> {
-                // Show first-run setup wizard
-                binding.kioskWebView.visibility = View.GONE
+                // Show first-run setup wizard, keeping WebView layout measured
+                binding.kioskWebView.visibility = View.INVISIBLE
                 binding.cardError.visibility = View.GONE
                 binding.includeSetupWizard.wizardRoot.visibility = View.VISIBLE
 
@@ -494,11 +541,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Step 3: Content Selection
+        // Step 3: Content Selection
         wizard.btnWizardTypeUrl.setOnClickListener {
-            selectWizardSourceType(isUrl = true)
+            selectWizardSourceType(WizardSourceType.REMOTE_URL)
         }
         wizard.btnWizardTypeLocal.setOnClickListener {
-            selectWizardSourceType(isUrl = false)
+            selectWizardSourceType(WizardSourceType.LOCAL_HTML)
+        }
+        wizard.btnWizardTypeWifi.setOnClickListener {
+            selectWizardSourceType(WizardSourceType.WIFI_TRANSFER)
         }
 
         wizard.btnWizardHelperHttps.setOnClickListener {
@@ -525,7 +576,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         wizard.btnWizardPickHtml.setOnClickListener {
-            htmlPickerLauncher.launch(Unit)
+            requestHtmlDocumentPick()
+        }
+
+        wizard.btnWizardStartWifiTransfer.setOnClickListener {
+            openWifiTransferDialog()
         }
 
         // Navigation Policy selection
@@ -582,23 +637,45 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun selectWizardSourceType(isUrl: Boolean) {
+    private enum class WizardSourceType {
+        REMOTE_URL,
+        LOCAL_HTML,
+        WIFI_TRANSFER
+    }
+
+    private fun selectWizardSourceType(type: WizardSourceType) {
         val wizard = binding.includeSetupWizard
         val primary = ContextCompat.getColor(this, R.color.text_primary)
         val secondary = ContextCompat.getColor(this, R.color.text_secondary)
 
-        if (isUrl) {
-            wizard.btnWizardTypeUrl.setTextColor(primary)
-            wizard.btnWizardTypeLocal.setTextColor(secondary)
-            wizard.wizardPanelUrl.visibility = View.VISIBLE
-            wizard.wizardPanelLocal.visibility = View.GONE
-            wizard.editWizardUrl.requestFocus()
-        } else {
-            wizard.btnWizardTypeLocal.setTextColor(primary)
-            wizard.btnWizardTypeUrl.setTextColor(secondary)
-            wizard.wizardPanelLocal.visibility = View.VISIBLE
-            wizard.wizardPanelUrl.visibility = View.GONE
-            wizard.btnWizardPickHtml.requestFocus()
+        when (type) {
+            WizardSourceType.REMOTE_URL -> {
+                wizard.btnWizardTypeUrl.setTextColor(primary)
+                wizard.btnWizardTypeLocal.setTextColor(secondary)
+                wizard.btnWizardTypeWifi.setTextColor(secondary)
+                wizard.wizardPanelUrl.visibility = View.VISIBLE
+                wizard.wizardPanelLocal.visibility = View.GONE
+                wizard.wizardPanelWifi.visibility = View.GONE
+                wizard.editWizardUrl.requestFocus()
+            }
+            WizardSourceType.LOCAL_HTML -> {
+                wizard.btnWizardTypeLocal.setTextColor(primary)
+                wizard.btnWizardTypeUrl.setTextColor(secondary)
+                wizard.btnWizardTypeWifi.setTextColor(secondary)
+                wizard.wizardPanelLocal.visibility = View.VISIBLE
+                wizard.wizardPanelUrl.visibility = View.GONE
+                wizard.wizardPanelWifi.visibility = View.GONE
+                wizard.btnWizardPickHtml.requestFocus()
+            }
+            WizardSourceType.WIFI_TRANSFER -> {
+                wizard.btnWizardTypeWifi.setTextColor(primary)
+                wizard.btnWizardTypeUrl.setTextColor(secondary)
+                wizard.btnWizardTypeLocal.setTextColor(secondary)
+                wizard.wizardPanelWifi.visibility = View.VISIBLE
+                wizard.wizardPanelUrl.visibility = View.GONE
+                wizard.wizardPanelLocal.visibility = View.GONE
+                wizard.btnWizardStartWifiTransfer.requestFocus()
+            }
         }
     }
 
@@ -707,21 +784,30 @@ class MainActivity : AppCompatActivity() {
     // =========================================================================
 
     private fun setupPreviewControls() {
+        binding.btnConfirmPreview.setOnClickListener {
+            confirmAndActivatePreview()
+        }
         binding.btnExitPreview.setOnClickListener {
             exitPreview()
         }
     }
 
     private fun launchPreview(source: ContentSource, policy: NavigationPolicy) {
+        previewingSource = source
+        previewingPolicy = policy
         isPreviewing = true
         contentController.setPreviewing(true)
+
+        // Dismiss active dialogs so the preview is visible
+        activeWifiTransferDialog?.dismiss()
+        activeAdminDialog?.dismiss()
 
         // Show WebView with Preview Bar overlay
         binding.includeSetupWizard.wizardRoot.visibility = View.GONE
         binding.cardError.visibility = View.GONE
         binding.kioskWebView.visibility = View.VISIBLE
         binding.previewBar.visibility = View.VISIBLE
-        binding.btnExitPreview.requestFocus()
+        binding.btnConfirmPreview.requestFocus()
 
         val summary = when (source) {
             is ContentSource.RemoteUrl -> source.url
@@ -730,7 +816,37 @@ class MainActivity : AppCompatActivity() {
         }
         binding.txtPreviewTitle.text = "👁 PREVIEW MODE — $summary"
 
+        DisplayMarginApplicator.applyMargins(binding.mainRoot, currentDisplayMargins)
         binding.kioskWebView.loadContent(source, policy)
+    }
+
+    private fun confirmAndActivatePreview() {
+        val source = previewingSource ?: return
+        val policy = previewingPolicy ?: NavigationPolicy.DEFAULT
+        isPreviewing = false
+        contentController.setPreviewing(false)
+        binding.previewBar.visibility = View.GONE
+
+        lifecycleScope.launch {
+            if (source is ContentSource.LocalHtml) {
+                handleLocalHtmlImported(source.metadata)
+            }
+            val result = configRepository.updateConfiguration { current ->
+                current.copy(
+                    contentSource = source,
+                    navigationPolicy = policy,
+                    isSetupCompleted = true
+                )
+            }
+            val updatedConfig = result.getOrNull() ?: configRepository.getConfiguration()
+            applyDisplayPreferences(updatedConfig)
+            binding.kioskWebView.loadContent(source, updatedConfig.navigationPolicy)
+            diagnosticLogger.log(
+                LogLevel.INFO,
+                LogCategory.CONFIG,
+                "Activated new content source from preview confirmation: $source"
+            )
+        }
     }
 
     private fun exitPreview() {
@@ -874,7 +990,10 @@ class MainActivity : AppCompatActivity() {
                 contentController = contentController,
                 deviceInfoProvider = deviceInfoProvider,
                 onPickHtmlRequested = {
-                    htmlPickerLauncher.launch(Unit)
+                    requestHtmlDocumentPick()
+                },
+                onWifiTransferRequested = {
+                    openWifiTransferDialog()
                 },
                 onPreviewRequested = { candidateSource, candidatePolicy ->
                     launchPreview(candidateSource, candidatePolicy)
@@ -901,6 +1020,55 @@ class MainActivity : AppCompatActivity() {
             activeAdminDialog = dialog
             dialog.show(supportFragmentManager, AdminContentDialog.TAG)
         }
+    }
+
+    private fun openWifiTransferDialog() {
+        val dialog = WifiTransferDialog.newInstance(
+            importer = localHtmlImporter,
+            onFileImported = { metadata ->
+                handleLocalHtmlImported(metadata)
+            },
+            onPreviewRequested = { candidateSource, candidatePolicy ->
+                launchPreview(candidateSource, candidatePolicy)
+            },
+            onActivationConfirmed = { candidateSource ->
+                lifecycleScope.launch {
+                    if (candidateSource is ContentSource.LocalHtml) {
+                        handleLocalHtmlImported(candidateSource.metadata)
+                    }
+                    val result = configRepository.updateConfiguration { current ->
+                        current.copy(
+                            contentSource = candidateSource,
+                            isSetupCompleted = true
+                        )
+                    }
+                    val updatedConfig = result.getOrNull() ?: configRepository.getConfiguration()
+                    applyDisplayPreferences(updatedConfig)
+                    binding.includeSetupWizard.wizardRoot.visibility = View.GONE
+                    binding.cardError.visibility = View.GONE
+                    binding.kioskWebView.visibility = View.VISIBLE
+                    binding.kioskWebView.loadContent(candidateSource, updatedConfig.navigationPolicy)
+                    diagnosticLogger.log(
+                        LogLevel.INFO,
+                        LogCategory.CONFIG,
+                        "Activated new content source from Wi-Fi transfer: $candidateSource"
+                    )
+                }
+            },
+            onDismissed = {
+                activeWifiTransferDialog = null
+                if (!isPreviewing) {
+                    lifecycleScope.launch {
+                        val config = configRepository.getConfiguration()
+                        val state = startupEngine.evaluate(config)
+                        handleStartupState(state, config)
+                    }
+                }
+            }
+        )
+
+        activeWifiTransferDialog = dialog
+        dialog.show(supportFragmentManager, WifiTransferDialog.TAG)
     }
 
     private fun observeRenderer() {

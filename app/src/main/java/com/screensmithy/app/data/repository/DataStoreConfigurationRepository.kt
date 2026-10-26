@@ -13,6 +13,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.screensmithy.app.domain.model.ContentSource
+import com.screensmithy.app.domain.model.DisplayMargins
 import com.screensmithy.app.domain.model.DisplayPreferences
 import com.screensmithy.app.domain.model.KioskConfiguration
 import com.screensmithy.app.domain.model.LocalHtmlMetadata
@@ -181,9 +182,24 @@ class DataStoreConfigurationRepository(
 
         val keepAwake = preferences[KEY_DISPLAY_KEEP_AWAKE] ?: true
         val displayImmersive = preferences[KEY_DISPLAY_IMMERSIVE] ?: true
+        val marginTop = preferences[KEY_DISPLAY_MARGIN_TOP] ?: 0
+        val marginBottom = preferences[KEY_DISPLAY_MARGIN_BOTTOM] ?: 0
+        val marginLeft = preferences[KEY_DISPLAY_MARGIN_LEFT] ?: 0
+        val marginRight = preferences[KEY_DISPLAY_MARGIN_RIGHT] ?: 0
+        val margins = try {
+            DisplayMargins(
+                topPercent = marginTop,
+                bottomPercent = marginBottom,
+                leftPercent = marginLeft,
+                rightPercent = marginRight
+            )
+        } catch (_: Exception) {
+            DisplayMargins.ZERO
+        }
         val displayPreferences = DisplayPreferences(
             keepScreenAwake = keepAwake,
-            immersiveSticky = displayImmersive
+            immersiveSticky = displayImmersive,
+            displayMargins = margins
         )
 
         val reloadOnNetworkRestored = preferences[KEY_RELOAD_ON_NETWORK_RESTORED] ?: true
@@ -252,6 +268,10 @@ class DataStoreConfigurationRepository(
 
         preferences[KEY_DISPLAY_KEEP_AWAKE] = config.displayPreferences.keepScreenAwake
         preferences[KEY_DISPLAY_IMMERSIVE] = config.displayPreferences.immersiveSticky
+        preferences[KEY_DISPLAY_MARGIN_TOP] = config.displayPreferences.displayMargins.topPercent
+        preferences[KEY_DISPLAY_MARGIN_BOTTOM] = config.displayPreferences.displayMargins.bottomPercent
+        preferences[KEY_DISPLAY_MARGIN_LEFT] = config.displayPreferences.displayMargins.leftPercent
+        preferences[KEY_DISPLAY_MARGIN_RIGHT] = config.displayPreferences.displayMargins.rightPercent
         preferences[KEY_RELOAD_ON_NETWORK_RESTORED] = config.reloadOnNetworkRestored
 
         preferences[KEY_RETRY_MAX_RETRIES] = config.retryPolicy.maxRetries
@@ -298,6 +318,10 @@ class DataStoreConfigurationRepository(
 
         val KEY_DISPLAY_KEEP_AWAKE = booleanPreferencesKey("config_display_keep_awake")
         val KEY_DISPLAY_IMMERSIVE = booleanPreferencesKey("config_display_immersive")
+        val KEY_DISPLAY_MARGIN_TOP = intPreferencesKey("config_display_margin_top")
+        val KEY_DISPLAY_MARGIN_BOTTOM = intPreferencesKey("config_display_margin_bottom")
+        val KEY_DISPLAY_MARGIN_LEFT = intPreferencesKey("config_display_margin_left")
+        val KEY_DISPLAY_MARGIN_RIGHT = intPreferencesKey("config_display_margin_right")
         val KEY_RELOAD_ON_NETWORK_RESTORED = booleanPreferencesKey("config_reload_on_network_restored")
 
         val KEY_RETRY_MAX_RETRIES = intPreferencesKey("config_retry_max_retries")

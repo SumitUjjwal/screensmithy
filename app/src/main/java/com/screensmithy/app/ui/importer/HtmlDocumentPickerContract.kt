@@ -32,5 +32,29 @@ class HtmlDocumentPickerContract : ActivityResultContract<Unit, Uri?>() {
     companion object {
         const val MIME_TYPE_HTML = "text/html"
         val ALLOWED_MIME_TYPES = arrayOf("text/html", "application/xhtml+xml")
+
+        /**
+         * Checks whether an application is installed that can handle the document picker intent.
+         * On Google TV / Android TV, DocumentsUI is typically missing, and instead
+         * com.android.tv.frameworkpackagestubs (Stubs$DocumentsStub) is registered,
+         * which merely displays "You don't have an app that can do this."
+         * We detect this stub to avoid invoking it.
+         */
+        fun isAvailable(context: Context): Boolean {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = MIME_TYPE_HTML
+                putExtra(Intent.EXTRA_MIME_TYPES, ALLOWED_MIME_TYPES)
+            }
+            val resolveInfo = context.packageManager.resolveActivity(intent, 0) ?: return false
+            val pkg = resolveInfo.activityInfo?.packageName.orEmpty()
+            val cls = resolveInfo.activityInfo?.name.orEmpty()
+            if (pkg.contains("frameworkpackagestubs", ignoreCase = true) ||
+                cls.contains("Stub", ignoreCase = true)
+            ) {
+                return false
+            }
+            return true
+        }
     }
 }

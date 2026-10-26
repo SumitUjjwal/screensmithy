@@ -15,7 +15,7 @@ class AdminSessionManagerTest {
     private val authRepository = mockk<AdminAuthRepository>(relaxed = true)
     private lateinit var sessionManager: AdminSessionManager
 
-    private val validPin = "654321".toCharArray()
+    private val validPin = "6543".toCharArray()
     private val hashedPin = PinSecurity.hashPin(validPin)
 
     @Before
@@ -34,7 +34,7 @@ class AdminSessionManagerTest {
             failedAttempts = 3
         )
 
-        val result = sessionManager.authenticate("123456".toCharArray(), nowEpochMs = 1000L)
+        val result = sessionManager.authenticate("1234".toCharArray(), nowEpochMs = 1000L)
 
         assertTrue(result is AuthResult.LockedOut)
         assertEquals(25L, (result as AuthResult.LockedOut).remainingSeconds)
@@ -48,7 +48,7 @@ class AdminSessionManagerTest {
         coEvery { authRepository.getLockoutState(any()) } returns LockoutState(isLockedOut = false)
         coEvery { authRepository.getHashedPin() } returns null
 
-        val result = sessionManager.authenticate("123456".toCharArray())
+        val result = sessionManager.authenticate("1234".toCharArray())
 
         assertEquals(AuthResult.PinNotConfigured, result)
         assertFalse(sessionManager.isAuthenticated.value)
@@ -76,7 +76,7 @@ class AdminSessionManagerTest {
             failedAttempts = 1
         )
 
-        val result = sessionManager.authenticate("111111".toCharArray(), nowEpochMs = 1000L)
+        val result = sessionManager.authenticate("1111".toCharArray(), nowEpochMs = 1000L)
 
         assertTrue(result is AuthResult.InvalidPin)
         assertEquals(1, (result as AuthResult.InvalidPin).failedAttempts)
@@ -94,7 +94,7 @@ class AdminSessionManagerTest {
             failedAttempts = 3
         )
 
-        val result = sessionManager.authenticate("111111".toCharArray(), nowEpochMs = 1000L)
+        val result = sessionManager.authenticate("1111".toCharArray(), nowEpochMs = 1000L)
 
         assertTrue(result is AuthResult.LockedOut)
         assertEquals(30L, (result as AuthResult.LockedOut).remainingSeconds)

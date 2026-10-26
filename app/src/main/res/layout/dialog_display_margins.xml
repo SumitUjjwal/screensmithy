@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/dialogMarginsRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/dialog_scrim"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:padding="24dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cardMargins"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_card_glow"
+        app:layout_constrainedHeight="true"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintWidth_max="760dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollMargins"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fillViewport="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="32dp"
+                android:paddingVertical="20dp">
+
+                <!-- Title -->
+                <TextView
+                    android:id="@+id/txtMarginsTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Display Margins (Overscan Protection)"
+                    android:textColor="@color/text_primary"
+                    android:textSize="22sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/txtMarginsSubtitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Adjust margins (0%–20%) to prevent ScreenSmithy UI and web content from being cropped by TV bezels and display overscan. Changes are previewed live."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/txtMarginsTitle" />
+
+                <!-- Viewport Summary Badge -->
+                <TextView
+                    android:id="@+id/txtUsableViewport"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_status_badge"
+                    android:backgroundTint="@color/surface_card"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="5dp"
+                    android:text="Usable Viewport: 100% Horizontal × 100% Vertical"
+                    android:textColor="@color/brand_accent"
+                    android:textSize="13sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/txtMarginsSubtitle" />
+
+                <!-- Stepper Container -->
+                <LinearLayout
+                    android:id="@+id/boxSteppers"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_status_badge"
+                    android:backgroundTint="@color/surface_card"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/txtUsableViewport">
+
+                    <!-- Row 1: Top Margin -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Top Margin"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp" />
+
+                        <Button
+                            android:id="@+id/btnTopMinus"
+                            android:layout_width="48dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="−"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            app:backgroundTint="@null" />
+
+                        <TextView
+                            android:id="@+id/txtTopValue"
+                            android:layout_width="72dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="0%"
+                            android:textColor="@color/brand_accent"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/btnTopPlus"
+                            android:layout_width="48dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="+"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            app:backgroundTint="@null" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="2dp"
+                        android:background="@color/surface_card_border" />
+
+                    <!-- Row 2: Bottom Margin -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Bottom Margin"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp" />
+
+                        <Button
+                            android:id="@+id/btnBottomMinus"
+                            android:layout_width="48dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="−"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            app:backgroundTint="@null" />
+
+                        <TextView
+                            android:id="@+id/txtBottomValue"
+                            android:layout_width="72dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="0%"
+                            android:textColor="@color/brand_accent"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/btnBottomPlus"
+                            android:layout_width="48dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="+"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            app:backgroundTint="@null" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="2dp"
+                        android:background="@color/surface_card_border" />
+
+                    <!-- Row 3: Left Margin -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Left Margin"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp" />
+
+                        <Button
+                            android:id="@+id/btnLeftMinus"
+                            android:layout_width="48dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="−"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            app:backgroundTint="@null" />
+
+                        <TextView
+                            android:id="@+id/txtLeftValue"
+                            android:layout_width="72dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="0%"
+                            android:textColor="@color/brand_accent"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/btnLeftPlus"
+                            android:layout_width="48dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="+"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            app:backgroundTint="@null" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="2dp"
+                        android:background="@color/surface_card_border" />
+
+                    <!-- Row 4: Right Margin -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Right Margin"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp" />
+
+                        <Button
+                            android:id="@+id/btnRightMinus"
+                            android:layout_width="48dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="−"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            app:backgroundTint="@null" />
+
+                        <TextView
+                            android:id="@+id/txtRightValue"
+                            android:layout_width="72dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="0%"
+                            android:textColor="@color/brand_accent"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/btnRightPlus"
+                            android:layout_width="48dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_focus_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="+"
+                            android:textColor="@color/text_primary"
+                            android:textSize="18sp"
+                            app:backgroundTint="@null" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Actions Row -->
+                <LinearLayout
+                    android:id="@+id/rowMarginActions"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/boxSteppers">
+
+                    <Button
+                        android:id="@+id/btnResetDefault"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="12dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_focus_button"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:text="↺ Reset (0%)"
+                        android:textAllCaps="false"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        app:backgroundTint="@null" />
+
+                    <Button
+                        android:id="@+id/btnCancel"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="12dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_focus_button"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:text="Cancel"
+                        android:textAllCaps="false"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp"
+                        app:backgroundTint="@null" />
+
+                    <Button
+                        android:id="@+id/btnApply"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1.2"
+                        android:background="@drawable/bg_focus_button"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:text="✓ Apply &amp; Save"
+                        android:textAllCaps="false"
+                        android:textColor="@color/brand_accent"
+                        android:textSize="14sp"
+                        app:backgroundTint="@null" />
+                </LinearLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.core.widget.NestedScrollView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -9,37 +9,41 @@ import org.junit.Test
 class PinSecurityTest {
 
     @Test
-    fun `validatePinFormat accepts valid 6 to 12 digit numeric PINs`() {
-        assertEquals(PinValidationResult.Valid, PinSecurity.validatePinFormat("123456".toCharArray()))
-        assertEquals(PinValidationResult.Valid, PinSecurity.validatePinFormat("000000".toCharArray()))
-        assertEquals(PinValidationResult.Valid, PinSecurity.validatePinFormat("9876543210".toCharArray()))
-        assertEquals(PinValidationResult.Valid, PinSecurity.validatePinFormat("123456789012".toCharArray()))
+    fun `validatePinFormat accepts valid 4 digit numeric PINs`() {
+        assertEquals(PinValidationResult.Valid, PinSecurity.validatePinFormat("1234".toCharArray()))
+        assertEquals(PinValidationResult.Valid, PinSecurity.validatePinFormat("0000".toCharArray()))
+        assertEquals(PinValidationResult.Valid, PinSecurity.validatePinFormat("9876".toCharArray()))
+        assertEquals(PinValidationResult.Valid, PinSecurity.validatePinFormat("5555".toCharArray()))
     }
 
     @Test
-    fun `validatePinFormat rejects PINs shorter than 6 digits`() {
-        val result = PinSecurity.validatePinFormat("12345".toCharArray())
+    fun `validatePinFormat rejects PINs shorter than 4 digits`() {
+        val result = PinSecurity.validatePinFormat("123".toCharArray())
         assertTrue(result is PinValidationResult.TooShort)
-        assertEquals(6, (result as PinValidationResult.TooShort).minLength)
+        assertEquals(4, (result as PinValidationResult.TooShort).minLength)
     }
 
     @Test
-    fun `validatePinFormat rejects PINs longer than 12 digits`() {
-        val result = PinSecurity.validatePinFormat("1234567890123".toCharArray())
+    fun `validatePinFormat rejects PINs longer than 4 digits`() {
+        val result = PinSecurity.validatePinFormat("12345".toCharArray())
         assertTrue(result is PinValidationResult.TooLong)
-        assertEquals(12, (result as PinValidationResult.TooLong).maxLength)
+        assertEquals(4, (result as PinValidationResult.TooLong).maxLength)
+
+        val result2 = PinSecurity.validatePinFormat("123456".toCharArray())
+        assertTrue(result2 is PinValidationResult.TooLong)
+        assertEquals(4, (result2 as PinValidationResult.TooLong).maxLength)
     }
 
     @Test
     fun `validatePinFormat rejects non-numeric characters`() {
-        assertEquals(PinValidationResult.NonNumeric, PinSecurity.validatePinFormat("12345a".toCharArray()))
-        assertEquals(PinValidationResult.NonNumeric, PinSecurity.validatePinFormat("12-456".toCharArray()))
-        assertEquals(PinValidationResult.NonNumeric, PinSecurity.validatePinFormat("      ".toCharArray()))
+        assertEquals(PinValidationResult.NonNumeric, PinSecurity.validatePinFormat("123a".toCharArray()))
+        assertEquals(PinValidationResult.NonNumeric, PinSecurity.validatePinFormat("12-4".toCharArray()))
+        assertEquals(PinValidationResult.NonNumeric, PinSecurity.validatePinFormat("    ".toCharArray()))
     }
 
     @Test
     fun `hashPin creates valid PBKDF2 hash with random salt`() {
-        val pin = "849201".toCharArray()
+        val pin = "8492".toCharArray()
         val hashed = PinSecurity.hashPin(pin)
 
         assertEquals(64, hashed.hashHex.length) // 256 bits = 32 bytes = 64 hex chars
@@ -54,22 +58,22 @@ class PinSecurityTest {
 
     @Test
     fun `verifyPin returns true for correct candidate PIN`() {
-        val pin = "582914".toCharArray()
+        val pin = "5829".toCharArray()
         val hashed = PinSecurity.hashPin(pin)
 
-        val candidate = "582914".toCharArray()
+        val candidate = "5829".toCharArray()
         assertTrue("Matching PIN candidate must verify successfully", PinSecurity.verifyPin(candidate, hashed))
     }
 
     @Test
     fun `verifyPin returns false for incorrect candidate PIN`() {
-        val pin = "582914".toCharArray()
+        val pin = "5829".toCharArray()
         val hashed = PinSecurity.hashPin(pin)
 
-        val wrongCandidate = "582915".toCharArray()
+        val wrongCandidate = "5828".toCharArray()
         assertFalse("Mismatched PIN candidate must fail verification", PinSecurity.verifyPin(wrongCandidate, hashed))
 
-        val shortCandidate = "12345".toCharArray()
+        val shortCandidate = "582".toCharArray()
         assertFalse("Different length PIN candidate must fail verification", PinSecurity.verifyPin(shortCandidate, hashed))
     }
 
@@ -80,6 +84,6 @@ class PinSecurityTest {
             saltHex = "invalid_hex!",
             iterations = 100_000
         )
-        assertFalse(PinSecurity.verifyPin("123456".toCharArray(), corruptedSalt))
+        assertFalse(PinSecurity.verifyPin("1234".toCharArray(), corruptedSalt))
     }
 }

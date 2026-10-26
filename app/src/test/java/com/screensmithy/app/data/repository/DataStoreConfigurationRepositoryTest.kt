@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import app.cash.turbine.test
 import com.screensmithy.app.domain.model.ContentSource
+import com.screensmithy.app.domain.model.DisplayMargins
 import com.screensmithy.app.domain.model.DisplayPreferences
 import com.screensmithy.app.domain.model.KioskConfiguration
 import com.screensmithy.app.domain.model.LocalHtmlMetadata
@@ -213,5 +214,83 @@ class DataStoreConfigurationRepositoryTest {
         assertFalse(saved.displayPreferences.keepScreenAwake)
         assertFalse(saved.displayPreferences.immersiveSticky)
         assertFalse(saved.reloadOnNetworkRestored)
+    }
+
+    @Test
+    fun updateConfiguration_savesDisplayMarginsRoundtrip() = testScope.runTest {
+        val margins = DisplayMargins(topPercent = 5, bottomPercent = 4, leftPercent = 3, rightPercent = 2)
+        val result = repository.updateConfiguration { current ->
+            current.copy(
+                displayPreferences = current.displayPreferences.copy(
+                    displayMargins = margins
+                )
+            )
+        }
+
+        assertTrue(result.isSuccess)
+        val saved = repository.getConfiguration()
+        assertEquals(margins, saved.displayPreferences.displayMargins)
+        assertEquals(5, saved.displayPreferences.displayMargins.topPercent)
+        assertEquals(4, saved.displayPreferences.displayMargins.bottomPercent)
+        assertEquals(3, saved.displayPreferences.displayMargins.leftPercent)
+        assertEquals(2, saved.displayPreferences.displayMargins.rightPercent)
+    }
+
+    @Test
+    fun getConfiguration_whenMarginsCorrupted_fallsBackToZeroMargins() = testScope.runTest {
+        testDataStore.edit { prefs ->
+            prefs[DataStoreConfigurationRepository.KEY_SCHEMA_VERSION] = 1
+            // Write invalid margin exceeding 20%
+            prefs[DataStoreConfigurationRepository.KEY_DISPLAY_MARGIN_TOP] = 99
+        }
+
+        val config = repository.getConfiguration()
+        assertEquals(DisplayMargins.ZERO, config.displayPreferences.displayMargins)
+    }
+
+    @Test
+    fun resetConfiguration_resetsMarginsToZero() = testScope.runTest {
+        repository.updateConfiguration { current ->
+            current.copy(
+                displayPreferences = current.displayPreferences.copy(
+                    displayMargins = DisplayMargins(topPercent = 10, bottomPercent = 10, leftPercent = 10, rightPercent = 10)
+                )
+            )
+        }
+        val beforeReset = repository.getConfiguration()
+        assertFalse(beforeReset.displayPreferences.displayMargins.isZero)
+
+        repository.resetConfiguration()
+        val afterReset = repository.getConfiguration()
+        assertTrue(afterReset.displayPreferences.displayMargins.isZero)
+        assertEquals(DisplayMargins.ZERO, afterReset.displayPreferences.displayMargins)
+    }
+
+    @Test
+    fun updateDisplayMargins_preservesContentSourceAndOtherSettings() = testScope.runTest {
+        // Set up active content source and custom settings
+        repository.updateConfiguration { current ->
+            current.copy(
+                isSetupCompleted = true,
+                contentSource = ContentSource.RemoteUrl("https://signage.example.com/live"),
+                navigationPolicy = NavigationPolicy(mode = NavigationMode.ALLOWLIST_ONLY, trustedHosts = setOf("signage.example.com"))
+            )
+        }
+
+        // Now update only display margins
+        repository.updateConfiguration { current ->
+            current.copy(
+                displayPreferences = current.displayPreferences.copy(
+                    displayMargins = DisplayMargins(topPercent = 3, bottomPercent = 3, leftPercent = 3, rightPercent = 3)
+                )
+            )
+        }
+
+        val updated = repository.getConfiguration()
+        assertEquals(DisplayMargins(topPercent = 3, bottomPercent = 3, leftPercent = 3, rightPercent = 3), updated.displayPreferences.displayMargins)
+        assertTrue(updated.isSetupCompleted)
+        assertTrue(updated.contentSource is ContentSource.RemoteUrl)
+        assertEquals("https://signage.example.com/live", (updated.contentSource as ContentSource.RemoteUrl).url)
+        assertEquals(NavigationMode.ALLOWLIST_ONLY, updated.navigationPolicy.mode)
     }
 }

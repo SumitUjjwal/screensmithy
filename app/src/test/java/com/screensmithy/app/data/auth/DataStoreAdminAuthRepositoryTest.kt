@@ -51,7 +51,7 @@ class DataStoreAdminAuthRepositoryTest {
 
     @Test
     fun `savePin persists HashedPin and resets penalties`() = testScope.runTest {
-        val hashed = PinSecurity.hashPin("123456".toCharArray())
+        val hashed = PinSecurity.hashPin("1234".toCharArray())
         repository.recordFailedAttempt(1000L) // Record an initial attempt
 
         repository.savePin(hashed)
@@ -71,7 +71,7 @@ class DataStoreAdminAuthRepositoryTest {
 
     @Test
     fun `clearPin removes credentials and resets penalties`() = testScope.runTest {
-        val hashed = PinSecurity.hashPin("987654".toCharArray())
+        val hashed = PinSecurity.hashPin("9876".toCharArray())
         repository.savePin(hashed)
         assertTrue(repository.isPinConfigured())
 
