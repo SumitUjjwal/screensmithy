@@ -17,6 +17,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -132,6 +133,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.mainRoot) { _, insets ->
+            DisplayMarginApplicator.applyMargins(binding.mainRoot, currentDisplayMargins, insets = insets)
+            insets
+        }
 
         initServices()
         initFilePicker()
@@ -436,15 +442,15 @@ class MainActivity : AppCompatActivity() {
     private fun handleStartupState(state: StartupState, config: KioskConfiguration) {
         when (state) {
             is StartupState.Initializing -> {
-                // Show clean dark background while loading
+                // Show clean dark background while loading, keeping WebView measured
                 binding.includeSetupWizard.wizardRoot.visibility = View.GONE
-                binding.kioskWebView.visibility = View.GONE
+                binding.kioskWebView.visibility = View.INVISIBLE
                 binding.cardError.visibility = View.GONE
             }
 
             is StartupState.SetupRequired -> {
-                // Show first-run setup wizard
-                binding.kioskWebView.visibility = View.GONE
+                // Show first-run setup wizard, keeping WebView layout measured
+                binding.kioskWebView.visibility = View.INVISIBLE
                 binding.cardError.visibility = View.GONE
                 binding.includeSetupWizard.wizardRoot.visibility = View.VISIBLE
 
@@ -810,6 +816,7 @@ class MainActivity : AppCompatActivity() {
         }
         binding.txtPreviewTitle.text = "👁 PREVIEW MODE — $summary"
 
+        DisplayMarginApplicator.applyMargins(binding.mainRoot, currentDisplayMargins)
         binding.kioskWebView.loadContent(source, policy)
     }
 
@@ -832,6 +839,7 @@ class MainActivity : AppCompatActivity() {
                 )
             }
             val updatedConfig = result.getOrNull() ?: configRepository.getConfiguration()
+            applyDisplayPreferences(updatedConfig)
             binding.kioskWebView.loadContent(source, updatedConfig.navigationPolicy)
             diagnosticLogger.log(
                 LogLevel.INFO,
@@ -1035,6 +1043,10 @@ class MainActivity : AppCompatActivity() {
                         )
                     }
                     val updatedConfig = result.getOrNull() ?: configRepository.getConfiguration()
+                    applyDisplayPreferences(updatedConfig)
+                    binding.includeSetupWizard.wizardRoot.visibility = View.GONE
+                    binding.cardError.visibility = View.GONE
+                    binding.kioskWebView.visibility = View.VISIBLE
                     binding.kioskWebView.loadContent(candidateSource, updatedConfig.navigationPolicy)
                     diagnosticLogger.log(
                         LogLevel.INFO,

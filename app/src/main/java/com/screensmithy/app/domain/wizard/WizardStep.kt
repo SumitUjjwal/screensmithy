@@ -14,7 +14,7 @@ enum class WizardStep {
     WELCOME_AND_MODE,
 
     /**
-     * Security setup: guides admin through 6-digit PIN configuration.
+     * Security setup: guides admin through 4-digit PIN configuration.
      */
     PIN_SETUP,
 

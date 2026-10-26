@@ -106,6 +106,7 @@ class SecureWebViewClient(
     override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
         super.onPageStarted(view, url, favicon)
         hasMainFrameError = false
+        view?.evaluateJavascript(WebViewSecurityConfigurator.VIEWPORT_NORMALIZATION_SCRIPT, null)
         if (!url.isNullOrBlank()) {
             onStateChange(RendererState.Loading(url = url, progressPercent = 0))
         }
@@ -115,6 +116,10 @@ class SecureWebViewClient(
         super.onPageFinished(view, url)
         if (!hasMainFrameError && !url.isNullOrBlank()) {
             onStateChange(RendererState.Ready(url = url, title = view?.title))
+            view?.evaluateJavascript(WebViewSecurityConfigurator.VIEWPORT_NORMALIZATION_SCRIPT, null)
+            view?.post {
+                view.evaluateJavascript("window.dispatchEvent(new Event('resize'));", null)
+            }
         }
     }
 

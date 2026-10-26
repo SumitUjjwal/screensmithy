@@ -72,7 +72,8 @@ object DisplayMarginApplicator {
     fun applyMargins(
         view: View,
         margins: DisplayMargins,
-        basePaddingDp: Int = 0
+        basePaddingDp: Int = 0,
+        insets: WindowInsetsCompat? = null
     ) {
         val displayMetrics = view.resources.displayMetrics
         val screenWidth = displayMetrics.widthPixels
@@ -82,7 +83,7 @@ object DisplayMarginApplicator {
         val marginPixels = calculateMarginPixels(screenWidth, screenHeight, margins)
 
         // Query active window insets to prevent double-applying system bars
-        val rootWindowInsets = ViewCompat.getRootWindowInsets(view)
+        val rootWindowInsets = insets ?: ViewCompat.getRootWindowInsets(view)
         val systemInsets = if (rootWindowInsets != null) {
             val bars = rootWindowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
             InsetPixels(left = bars.left, top = bars.top, right = bars.right, bottom = bars.bottom)

@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.webkit.WebView
 import android.widget.FrameLayout
+import androidx.core.view.doOnLayout
 import androidx.webkit.WebViewAssetLoader
 import com.screensmithy.app.domain.model.ContentSource
 import com.screensmithy.app.domain.model.NavigationPolicy
@@ -46,6 +47,8 @@ class KioskWebView @JvmOverloads constructor(
     private var secureWebViewClient: SecureWebViewClient? = null
     private var secureWebChromeClient: SecureWebChromeClient? = null
 
+    private var pendingLoad: Pair<ContentSource, NavigationPolicy>? = null
+
     var currentSource: ContentSource = ContentSource.None
         private set
 
@@ -61,6 +64,9 @@ class KioskWebView @JvmOverloads constructor(
 
         val webView = WebView(context).apply {
             layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+            isVerticalScrollBarEnabled = false
+            isHorizontalScrollBarEnabled = false
+            overScrollMode = OVER_SCROLL_NEVER
         }
 
         WebViewSecurityConfigurator.configure(webView, context)
@@ -109,6 +115,11 @@ class KioskWebView @JvmOverloads constructor(
 
     /**
      * Loads the specified [ContentSource] applying the given [NavigationPolicy].
+     *
+     * If the host layout has not yet completed its initial measurement pass (width == 0 or height == 0),
+     * content loading is deferred until layout finishes via [doOnLayout]. This guarantees that
+     * WebView viewport dimensions, CSS viewport units, display margins, and JavaScript scaling
+     * (e.g. window.innerWidth/innerHeight) receive the correct available layout bounds on first load.
      */
     fun loadContent(source: ContentSource, policy: NavigationPolicy = NavigationPolicy.DEFAULT) {
         this.currentSource = source
@@ -119,6 +130,45 @@ class KioskWebView @JvmOverloads constructor(
             managedWebView ?: return
         }
 
+        secureWebViewClient?.navigationPolicy = policy
+
+        if (source is ContentSource.None) {
+            pendingLoad = null
+            executeLoad(source, policy)
+            return
+        }
+
+        if (width == 0 || height == 0 || !this.isLaidOut) {
+            pendingLoad = Pair(source, policy)
+            doOnLayout {
+                post {
+                    pendingLoad?.let { (stagedSource, stagedPolicy) ->
+                        pendingLoad = null
+                        executeLoad(stagedSource, stagedPolicy)
+                    }
+                }
+            }
+            return
+        }
+
+        pendingLoad = null
+        executeLoad(source, policy)
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        if (oldw > 0 && oldh > 0 && (w != oldw || h != oldh)) {
+            managedWebView?.post {
+                managedWebView?.evaluateJavascript(
+                    WebViewSecurityConfigurator.VIEWPORT_NORMALIZATION_SCRIPT + "\nwindow.dispatchEvent(new Event('resize'));",
+                    null
+                )
+            }
+        }
+    }
+
+    private fun executeLoad(source: ContentSource, policy: NavigationPolicy) {
+        val webView = managedWebView ?: return
         secureWebViewClient?.navigationPolicy = policy
 
         when (source) {

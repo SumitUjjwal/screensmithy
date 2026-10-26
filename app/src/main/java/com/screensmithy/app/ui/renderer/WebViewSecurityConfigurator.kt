@@ -7,6 +7,7 @@ import android.view.View
 import android.webkit.CookieManager
 import android.webkit.WebSettings
 import android.webkit.WebView
+import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 
 /**
@@ -14,6 +15,9 @@ import androidx.webkit.WebViewFeature
  * Ensures all security constraints from MASTER_PROMPT.md are applied consistently in one place.
  */
 object WebViewSecurityConfigurator {
+
+    const val VIEWPORT_NORMALIZATION_SCRIPT: String =
+        """(function(){try{if(!window.__ss_vp_norm){window.__ss_vp_norm=true;Object.defineProperty(window,'innerWidth',{get:function(){return window.visualViewport?window.visualViewport.width:(document.documentElement?document.documentElement.clientWidth:window.outerWidth);},configurable:true});Object.defineProperty(window,'innerHeight',{get:function(){return window.visualViewport?window.visualViewport.height:(document.documentElement?document.documentElement.clientHeight:window.outerHeight);},configurable:true});}}catch(e){}})();"""
 
     /**
      * Applies locked-down security settings to [webView].
@@ -67,5 +71,24 @@ object WebViewSecurityConfigurator {
 
         // 9. Absolutely NO addJavascriptInterface
         // (Do not inject any Java/Kotlin objects into untrusted webpage context)
+
+        // 10. Viewport & Scale Isolation
+        // Enable viewport meta tag support and disable user/system scale distortions
+        settings.useWideViewPort = true
+        settings.loadWithOverviewMode = false
+        settings.setSupportZoom(false)
+        settings.builtInZoomControls = false
+        settings.displayZoomControls = false
+        settings.textZoom = 100
+
+        // Guarantee that window.innerWidth and window.innerHeight always report the true available
+        // viewport bounds rather than expanding when unscaled fixed-width elements exist in the DOM.
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                VIEWPORT_NORMALIZATION_SCRIPT,
+                setOf("*")
+            )
+        }
     }
 }
