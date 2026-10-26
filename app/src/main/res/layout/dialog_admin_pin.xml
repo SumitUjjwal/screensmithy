@@ -13,323 +13,343 @@
     <!-- Central Authentication Card -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/cardPin"
-        android:layout_width="540dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_card_glow"
-        android:paddingStart="28dp"
-        android:paddingEnd="28dp"
-        android:paddingTop="24dp"
-        android:paddingBottom="32dp"
+        app:layout_constrainedHeight="true"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintWidth_max="520dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Title -->
-        <TextView
-            android:id="@+id/txtPinTitle"
-            android:layout_width="wrap_content"
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollPin"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
-            android:text="Admin Authentication"
-            android:textColor="@color/text_primary"
-            android:textSize="26sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <!-- Subtitle -->
-        <TextView
-            android:id="@+id/txtPinSubtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Enter your 6-digit PIN to access settings"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtPinTitle" />
-
-        <!-- Masked PIN Display -->
-        <TextView
-            android:id="@+id/txtMaskedPin"
-            android:layout_width="0dp"
-            android:layout_height="52dp"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/bg_status_badge"
-            android:backgroundTint="@color/surface_card"
-            android:gravity="center"
-            android:letterSpacing="0.3"
-            android:text="______"
-            android:textColor="@color/brand_accent"
-            android:textSize="26sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtPinSubtitle"
-            app:layout_constraintWidth_percent="0.85" />
-
-        <!-- Feedback & Error Message -->
-        <TextView
-            android:id="@+id/txtPinError"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:textColor="@color/status_error_text"
-            android:textSize="13sp"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtMaskedPin"
-            app:layout_constraintWidth_percent="0.9"
-            tools:text="Incorrect PIN. 2 attempts remaining."
-            tools:visibility="visible" />
-
-        <!-- 3x4 Numeric Keypad Grid -->
-        <LinearLayout
-            android:id="@+id/keypadContainer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:gravity="center"
-            android:orientation="vertical"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtPinError">
-
-            <!-- Row 1: 1, 2, 3 -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/btnKey1"
-                    android:layout_width="72dp"
-                    android:layout_height="54dp"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/bg_keypad_button"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:text="1"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
-                    app:backgroundTint="@null" />
-
-                <Button
-                    android:id="@+id/btnKey2"
-                    android:layout_width="72dp"
-                    android:layout_height="54dp"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/bg_keypad_button"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:text="2"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
-                    app:backgroundTint="@null" />
-
-                <Button
-                    android:id="@+id/btnKey3"
-                    android:layout_width="72dp"
-                    android:layout_height="54dp"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/bg_keypad_button"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:text="3"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
-                    app:backgroundTint="@null" />
-            </LinearLayout>
-
-            <!-- Row 2: 4, 5, 6 -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/btnKey4"
-                    android:layout_width="72dp"
-                    android:layout_height="54dp"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/bg_keypad_button"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:text="4"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
-                    app:backgroundTint="@null" />
-
-                <Button
-                    android:id="@+id/btnKey5"
-                    android:layout_width="72dp"
-                    android:layout_height="54dp"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/bg_keypad_button"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:text="5"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
-                    app:backgroundTint="@null" />
-
-                <Button
-                    android:id="@+id/btnKey6"
-                    android:layout_width="72dp"
-                    android:layout_height="54dp"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/bg_keypad_button"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:text="6"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
-                    app:backgroundTint="@null" />
-            </LinearLayout>
-
-            <!-- Row 3: 7, 8, 9 -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/btnKey7"
-                    android:layout_width="72dp"
-                    android:layout_height="54dp"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/bg_keypad_button"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:text="7"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
-                    app:backgroundTint="@null" />
-
-                <Button
-                    android:id="@+id/btnKey8"
-                    android:layout_width="72dp"
-                    android:layout_height="54dp"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/bg_keypad_button"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:text="8"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
-                    app:backgroundTint="@null" />
-
-                <Button
-                    android:id="@+id/btnKey9"
-                    android:layout_width="72dp"
-                    android:layout_height="54dp"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/bg_keypad_button"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:text="9"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
-                    app:backgroundTint="@null" />
-            </LinearLayout>
-
-            <!-- Row 4: Clear, 0, Delete -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/btnClear"
-                    android:layout_width="72dp"
-                    android:layout_height="54dp"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/bg_keypad_button"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:text="C"
-                    android:textColor="@color/status_error_text"
-                    android:textSize="18sp"
-                    app:backgroundTint="@null" />
-
-                <Button
-                    android:id="@+id/btnKey0"
-                    android:layout_width="72dp"
-                    android:layout_height="54dp"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/bg_keypad_button"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:text="0"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
-                    app:backgroundTint="@null" />
-
-                <Button
-                    android:id="@+id/btnDelete"
-                    android:layout_width="72dp"
-                    android:layout_height="54dp"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/bg_keypad_button"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:text="⌫"
-                    android:textColor="@color/brand_accent"
-                    android:textSize="20sp"
-                    app:backgroundTint="@null" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Action Buttons: Cancel and Submit -->
-        <LinearLayout
-            android:id="@+id/actionContainer"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp"
-            android:gravity="center"
-            android:orientation="horizontal"
+            android:fillViewport="true"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/keypadContainer"
-            app:layout_constraintWidth_percent="0.85">
+            app:layout_constraintTop_toTopOf="parent">
 
-            <Button
-                android:id="@+id/btnCancel"
-                android:layout_width="0dp"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_focus_button"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:paddingVertical="12dp"
-                android:text="Cancel"
-                android:textAllCaps="false"
-                android:textColor="@color/text_secondary"
-                android:textSize="15sp"
-                app:backgroundTint="@null" />
+                android:paddingStart="28dp"
+                android:paddingEnd="28dp"
+                android:paddingTop="20dp"
+                android:paddingBottom="22dp">
 
-            <Button
-                android:id="@+id/btnSubmit"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_focus_button"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:paddingVertical="12dp"
-                android:text="Submit"
-                android:textAllCaps="false"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                app:backgroundTint="@null" />
-        </LinearLayout>
+                <!-- Title -->
+                <TextView
+                    android:id="@+id/txtPinTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Admin Authentication"
+                    android:textColor="@color/text_primary"
+                    android:textSize="24sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <!-- Subtitle -->
+                <TextView
+                    android:id="@+id/txtPinSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Enter your 6-digit PIN to access settings"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/txtPinTitle" />
+
+                <!-- Masked PIN Display -->
+                <TextView
+                    android:id="@+id/txtMaskedPin"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_status_badge"
+                    android:backgroundTint="@color/surface_card"
+                    android:gravity="center"
+                    android:letterSpacing="0.3"
+                    android:text="______"
+                    android:textColor="@color/brand_accent"
+                    android:textSize="24sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/txtPinSubtitle"
+                    app:layout_constraintWidth_percent="0.85" />
+
+                <!-- Feedback & Error Message -->
+                <TextView
+                    android:id="@+id/txtPinError"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:textColor="@color/status_error_text"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/txtMaskedPin"
+                    app:layout_constraintWidth_percent="0.9"
+                    tools:text="Incorrect PIN. 2 attempts remaining."
+                    tools:visibility="visible" />
+
+                <!-- 3x4 Numeric Keypad Grid -->
+                <LinearLayout
+                    android:id="@+id/keypadContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/txtPinError">
+
+                    <!-- Row 1: 1, 2, 3 -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnKey1"
+                            android:layout_width="68dp"
+                            android:layout_height="46dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/bg_keypad_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="1"
+                            android:textColor="@color/text_primary"
+                            android:textSize="19sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnKey2"
+                            android:layout_width="68dp"
+                            android:layout_height="46dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/bg_keypad_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="2"
+                            android:textColor="@color/text_primary"
+                            android:textSize="19sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnKey3"
+                            android:layout_width="68dp"
+                            android:layout_height="46dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/bg_keypad_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="3"
+                            android:textColor="@color/text_primary"
+                            android:textSize="19sp"
+                            app:backgroundTint="@null" />
+                    </LinearLayout>
+
+                    <!-- Row 2: 4, 5, 6 -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnKey4"
+                            android:layout_width="68dp"
+                            android:layout_height="46dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/bg_keypad_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="4"
+                            android:textColor="@color/text_primary"
+                            android:textSize="19sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnKey5"
+                            android:layout_width="68dp"
+                            android:layout_height="46dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/bg_keypad_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="5"
+                            android:textColor="@color/text_primary"
+                            android:textSize="19sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnKey6"
+                            android:layout_width="68dp"
+                            android:layout_height="46dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/bg_keypad_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="6"
+                            android:textColor="@color/text_primary"
+                            android:textSize="19sp"
+                            app:backgroundTint="@null" />
+                    </LinearLayout>
+
+                    <!-- Row 3: 7, 8, 9 -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnKey7"
+                            android:layout_width="68dp"
+                            android:layout_height="46dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/bg_keypad_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="7"
+                            android:textColor="@color/text_primary"
+                            android:textSize="19sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnKey8"
+                            android:layout_width="68dp"
+                            android:layout_height="46dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/bg_keypad_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="8"
+                            android:textColor="@color/text_primary"
+                            android:textSize="19sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnKey9"
+                            android:layout_width="68dp"
+                            android:layout_height="46dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/bg_keypad_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="9"
+                            android:textColor="@color/text_primary"
+                            android:textSize="19sp"
+                            app:backgroundTint="@null" />
+                    </LinearLayout>
+
+                    <!-- Row 4: Clear, 0, Delete -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnClear"
+                            android:layout_width="68dp"
+                            android:layout_height="46dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/bg_keypad_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="C"
+                            android:textColor="@color/status_error_text"
+                            android:textSize="18sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnKey0"
+                            android:layout_width="68dp"
+                            android:layout_height="46dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/bg_keypad_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="0"
+                            android:textColor="@color/text_primary"
+                            android:textSize="19sp"
+                            app:backgroundTint="@null" />
+
+                        <Button
+                            android:id="@+id/btnDelete"
+                            android:layout_width="68dp"
+                            android:layout_height="46dp"
+                            android:layout_margin="3dp"
+                            android:background="@drawable/bg_keypad_button"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:text="⌫"
+                            android:textColor="@color/brand_accent"
+                            android:textSize="19sp"
+                            app:backgroundTint="@null" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Action Buttons: Cancel and Submit -->
+                <LinearLayout
+                    android:id="@+id/actionContainer"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="4dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/keypadContainer"
+                    app:layout_constraintWidth_percent="0.85">
+
+                    <Button
+                        android:id="@+id/btnCancel"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_focus_button"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:paddingVertical="10dp"
+                        android:text="Cancel"
+                        android:textAllCaps="false"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        app:backgroundTint="@null" />
+
+                    <Button
+                        android:id="@+id/btnSubmit"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_focus_button"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:paddingVertical="10dp"
+                        android:text="Submit"
+                        android:textAllCaps="false"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        app:backgroundTint="@null" />
+                </LinearLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.core.widget.NestedScrollView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

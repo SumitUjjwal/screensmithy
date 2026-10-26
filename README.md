@@ -16,9 +16,15 @@ ScreenSmithy is an open-source, enterprise-grade Android kiosk application built
   - **Zero On-Screen Clutter**: No visible administration buttons, settings icons, or affordances on the live kiosk presentation.
   - **Secret Remote Sequence**: 9-step directional sequence on the TV remote (`UP` $\to$ `UP` $\to$ `DOWN` $\to$ `DOWN` $\to$ `LEFT` $\to$ `RIGHT` $\to$ `LEFT` $\to$ `RIGHT` $\to$ `OK`) invokes the admin gate.
   - **Cryptographic Security**: PBKDF2WithHmacSHA256 salted PIN hashing (6–12 digits) with zero plaintext storage and progressive brute-force rate-limiting lockout.
+- **Global Display Margins & Overscan Protection**:
+  - Administrator-configurable display margins (0%–20% per edge, 1% step) to prevent TV bezels and overscan from cropping on-screen content.
+  - Applies globally across all application UI (remote URLs, local HTML, Wi-Fi transfer screens, setup wizard, admin PIN gate, and system dialogs).
+  - Background canvas seamlessly fills 100% of the display edge-to-edge; content insets safely without browser zoom distortion or scaling artifacts.
+  - Live real-time preview with D-pad steppers, usable viewport percentage badge, reset to 0%, and persistent DataStore storage.
 - **TV Remote & D-Pad Optimized**:
   - High-contrast visual focus indicators and custom D-pad navigation across all wizards and settings dialogs.
   - On-screen numeric keypad for seamless remote-control PIN entry.
+  - Newly authenticated Admin Dashboard sessions start at the top with initial focus on the first enabled control (preventing accidental bottom scrolling).
   - Full TV remote control for the Wi-Fi transfer session modal (QR code display, pairing code, countdown timer, preview, and activation).
 - **Idempotent Lifecycle & Crash Resilience**:
   - Idempotent startup coordinator prevents redundant reloads across TV input switching and lifecycle events (`onResume`, `onNewIntent`, `onWindowFocusChanged`).
@@ -69,7 +75,7 @@ For complete instructions on provisioning a dedicated device, see [**`docs/DEVIC
 ```
 
 ### 2. Verify Automated Tests
-ScreenSmithy includes 234 automated unit tests covering domain models, URL validation, Wi-Fi transfer HTTP endpoints, multipart streaming, HTML import, security hashing, recovery coordination, and device policies:
+ScreenSmithy includes 260 automated unit tests covering domain models, display margins, URL validation, Wi-Fi transfer HTTP endpoints, multipart streaming, HTML import, security hashing, recovery coordination, and device policies:
 ```bash
 ./gradlew testDebugUnitTest
 ```

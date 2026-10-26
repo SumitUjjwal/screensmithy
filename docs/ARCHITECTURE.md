@@ -387,3 +387,60 @@ sequenceDiagram
    - If confirmed, `ConfigurationRepository.updateConfiguration` atomically commits the new `ContentSource.LocalHtml`, marks `isSetupCompleted = true`, and enters live kiosk presentation.
    - If cancelled or if the preview fails, the previous working configuration is preserved without disruption.
 
+---
+
+## 9. Global Display Margins & Overscan Protection Architecture
+
+Consumer and commercial televisions commonly exhibit hardware overscan—an intentional legacy enlargement of the incoming display signal that crops 2% to 5% of pixels beyond the physical display bezel.
+
+ScreenSmithy incorporates an authoritative application-level presentation container and margin applicator that insets foreground UI across all application-owned screens while preserving edge-to-edge background rendering.
+
+### 9.1 Shared Layout & Inset Strategy
+- **Background Canvas**: The application root container (`mainRoot` in `activity_main.xml`) fills 100% of the display window (`MATCH_PARENT`), maintaining `@color/bg_dark` edge-to-edge. No letterboxing or raw black bars are injected.
+- **Content Insetting**: `DisplayMarginApplicator.applyMargins(view, margins)` computes pixel insets dynamically:
+  $$\text{insetPx} = \text{round}(\text{dimensionPx} \times \frac{\text{percent}}{100})$$
+- **System Bar Inset Coordination**: To avoid double-applying insets when system bars are visible, `DisplayMarginApplicator` queries `ViewCompat.getRootWindowInsets(view)` and applies:
+  $$\text{effectiveInset} = \text{basePadding} + \max(\text{systemBarInset}, \text{marginInset})$$
+- **Dialog Root Containers**: Application modals (`AdminPinDialog`, `AdminDashboardDialog`, `DisplayMarginsDialog`, `WifiTransferDialog`, `DiagnosticLogsDialog`) apply authoritative display margins to their root view in `onViewCreated` with `basePaddingDp = 24`. The dialog window occupies 100% of the display (`MATCH_PARENT`) so the dim scrim (`@color/dialog_scrim`) darkens the entire TV display edge-to-edge, while the interactive card remains safely inside the visible safe zone.
+
+### 9.2 Domain Model & Persistence
+- **Model (`com.screensmithy.app.domain.model.DisplayMargins`)**:
+  - Independent `topPercent`, `bottomPercent`, `leftPercent`, `rightPercent`.
+  - Invariants: $0 \le \text{percent} \le 20$, $\text{left} + \text{right} \le 40$, $\text{top} + \text{bottom} \le 40$.
+  - Step size: $1\%$.
+- **Persistence (`DataStoreConfigurationRepository`)**:
+  - Stored under `KEY_DISPLAY_MARGIN_TOP`, `KEY_DISPLAY_MARGIN_BOTTOM`, `KEY_DISPLAY_MARGIN_LEFT`, `KEY_DISPLAY_MARGIN_RIGHT` within `DisplayPreferences`.
+  - Missing or corrupted values fall back fail-safe to `DisplayMargins.ZERO`.
+  - Modifying display margins does not touch content URLs, navigation policies, or admin security credentials.
+
+### 9.3 Live Preview & Rollback
+- In `DisplayMarginsDialog`, remote D-pad steppers trigger `MainActivity.previewDisplayMargins(draftMargins)` in real time.
+- If the administrator cancels or dismisses the dialog without saving, `onDismiss` automatically invokes `MainActivity.restorePersistedDisplayMargins()`, reverting the display layout seamlessly without leaving draft artifacts.
+
+### 9.4 Responsive Native Layout & Viewport Sizing
+When global display margins are applied, root view containers (`dialogDashboardRoot`, `dialogPinRoot`, `dialogAdminRoot`, etc.) are inset by percentage margins plus base padding (`basePaddingDp = 24`), reducing the available content rectangle inside the container.
+
+To prevent horizontal clipping or negative positioning offsets:
+- Native dialog containers (`scrollDashboard`, `cardPin`, `scrollAdminContent`, `cardLogs`, `scrollWifiTransfer`, `cardMargins`, `scrollWizard`) use `android:layout_width="0dp"` with `app:layout_constrainedWidth="true"` and `app:layout_constraintWidth_max="<MAX_DP>"`.
+- This ensures the view expands up to its designed maximum width on spacious displays, while shrinking responsively to fit within the reduced available content area when margins are configured, eliminating negative horizontal offset and left-edge clipping.
+- In `AdminPinDialog`, `cardPin` enforces `app:layout_constrainedHeight="true"` enclosing a `NestedScrollView` (`scrollPin`), with optimized keypad button dimensions (`68dp × 46dp`, `3dp` margins). This guarantees all PIN indicators, numeric keypad buttons, Clear, Delete, Cancel, and Submit controls remain fully visible without clipping across all supported display sizes (including 720p and 1080p) and asymmetric margin configurations.
+
+---
+
+## 10. Admin Panel Lifecycle & Scroll/Focus Management
+
+### 10.1 Initial Scroll Offset & Focus Restoration
+On large TV displays, the Admin Dashboard contains extensive diagnostics and settings rows enclosed within a scrollable container (`NestedScrollView` `scrollDashboard`).
+
+- **Previous Defect**: Calling `requestFocus()` on `btnReloadLiveContent` during initialization forced `NestedScrollView` to automatically scroll to the bottom of the card, hiding the title, active session badge, and primary diagnostic status.
+- **Resolution**:
+  1. `btnReloadLiveContent.requestFocus()` removed.
+  2. `resetScrollAndInitialFocus()` posted to the view message queue after layout.
+  3. Container explicitly scrolls to `(0, 0)`:
+     ```kotlin
+     binding.scrollDashboard.scrollTo(0, 0)
+     ```
+  4. Initial focus is assigned to `btnConfigureDefaultLauncher` (or `btnToggleKeepAwake`), the first enabled interactive control at the top of the card.
+  5. Subsequent async data refreshes (such as network interface resolution or diagnostics loading) preserve the current user scroll position without jumping.
+
+

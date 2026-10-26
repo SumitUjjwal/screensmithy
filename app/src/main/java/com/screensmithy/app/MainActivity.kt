@@ -44,10 +44,12 @@ import com.screensmithy.app.domain.diagnostics.SystemDiagnosticInspector
 import com.screensmithy.app.domain.importer.ImportResult
 import com.screensmithy.app.domain.importer.LocalHtmlImporter
 import com.screensmithy.app.domain.model.ContentSource
+import com.screensmithy.app.domain.model.DisplayMargins
 import com.screensmithy.app.domain.model.KioskConfiguration
 import com.screensmithy.app.domain.model.LocalHtmlMetadata
 import com.screensmithy.app.domain.model.NavigationMode
 import com.screensmithy.app.domain.model.NavigationPolicy
+import com.screensmithy.app.ui.display.DisplayMarginApplicator
 import com.screensmithy.app.domain.model.RuntimeStatus
 import com.screensmithy.app.domain.renderer.RendererEvent
 import com.screensmithy.app.domain.renderer.RendererState
@@ -400,6 +402,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    var currentDisplayMargins: DisplayMargins = DisplayMargins.ZERO
+        private set
+
+    fun previewDisplayMargins(margins: DisplayMargins) {
+        DisplayMarginApplicator.applyMargins(binding.mainRoot, margins)
+    }
+
+    fun restorePersistedDisplayMargins() {
+        DisplayMarginApplicator.applyMargins(binding.mainRoot, currentDisplayMargins)
+    }
+
     private fun applyDisplayPreferences(config: KioskConfiguration) {
         if (config.displayPreferences.keepScreenAwake) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -415,6 +428,9 @@ class MainActivity : AppCompatActivity() {
         } else {
             insetsController.show(WindowInsetsCompat.Type.systemBars())
         }
+
+        currentDisplayMargins = config.displayPreferences.displayMargins
+        DisplayMarginApplicator.applyMargins(binding.mainRoot, currentDisplayMargins)
     }
 
     private fun handleStartupState(state: StartupState, config: KioskConfiguration) {

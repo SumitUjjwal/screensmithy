@@ -12,9 +12,11 @@
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollDashboard"
-        android:layout_width="960dp"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintWidth_max="960dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -535,6 +537,50 @@
                     app:backgroundTint="@null"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/btnToggleImmersive" />
+
+                <!-- Setting 4: Display Margins (Overscan Protection) -->
+                <LinearLayout
+                    android:id="@+id/settingRowDisplayMargins"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="@id/btnConfigureDisplayMargins"
+                    app:layout_constraintEnd_toStartOf="@id/btnConfigureDisplayMargins"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/btnConfigureDisplayMargins">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Display Margins (Overscan Protection)"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/txtDisplayMarginsSummary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Prevents cropping on TV edges. Currently: 0% Top, 0% Bottom, 0% Left, 0% Right"
+                        android:textColor="@color/text_muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnConfigureDisplayMargins"
+                    android:layout_width="160dp"
+                    android:layout_height="42dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/bg_focus_button"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:text="📐 Configure Margins"
+                    android:textAllCaps="false"
+                    android:textColor="@color/brand_accent"
+                    android:textSize="13sp"
+                    app:backgroundTint="@null"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/btnToggleReloadOnNetwork" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <!-- SECTION 3: ADMINISTRATIVE ACTIONS -->

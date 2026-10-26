@@ -48,6 +48,11 @@ class DiagnosticLogsDialog : DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Apply authoritative display margins to dialog root
+        val margins = (activity as? com.screensmithy.app.MainActivity)?.currentDisplayMargins ?: com.screensmithy.app.domain.model.DisplayMargins.ZERO
+        com.screensmithy.app.ui.display.DisplayMarginApplicator.applyMargins(binding.dialogLogsRoot, margins, basePaddingDp = 24)
+
         refreshLogs()
 
         binding.btnClearLogs.setOnClickListener {

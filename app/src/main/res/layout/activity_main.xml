@@ -12,15 +12,19 @@
     <!-- Notice: When visible, NO admin buttons are shown on screen. Admin gate is hidden remote sequence. -->
     <com.screensmithy.app.ui.renderer.KioskWebView
         android:id="@+id/kioskWebView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         tools:visibility="visible" />
 
     <!-- 2. Candidate Preview Control Bar (Visible only when Previewing) -->
     <LinearLayout
         android:id="@+id/previewBar"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="#D90F172A"
         android:elevation="12dp"
@@ -78,19 +82,25 @@
     <include
         android:id="@+id/includeSetupWizard"
         layout="@layout/view_setup_wizard"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         tools:visibility="gone" />
 
     <!-- 4. Recoverable Configuration Error Card (Visible when configuration cannot be presented) -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/cardError"
-        android:layout_width="720dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_card_glow"
         android:padding="32dp"
         android:visibility="gone"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintWidth_max="720dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

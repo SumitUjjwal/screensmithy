@@ -12,9 +12,11 @@
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollAdminContent"
-        android:layout_width="920dp"
+        android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintWidth_max="920dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

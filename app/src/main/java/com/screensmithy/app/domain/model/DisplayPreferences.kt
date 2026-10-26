@@ -5,5 +5,6 @@ package com.screensmithy.app.domain.model
  */
 data class DisplayPreferences(
     val keepScreenAwake: Boolean = true,
-    val immersiveSticky: Boolean = true
+    val immersiveSticky: Boolean = true,
+    val displayMargins: DisplayMargins = DisplayMargins.ZERO
 )

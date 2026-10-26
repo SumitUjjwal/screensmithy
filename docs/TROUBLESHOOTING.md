@@ -188,3 +188,28 @@ When troubleshooting unexpected behavior on an Android TV device, check these co
 - **Solution**:
   - In **Managed Device Owner Mode**, Lock Task Mode (`LOCK_TASK_MODE_LOCKED`) suppresses unauthorized third-party package launches.
   - For commercial deployments, consider using dedicated enterprise hospitality displays, or commercial Android TV remotes without third-party streaming shortcut keys.
+
+---
+
+## 7. Display Cropping, Overscan & Admin Navigation
+
+### Symptom: Content edges, text, or buttons are cropped near TV screen edges
+- **Cause**: Many consumer televisions and commercial displays apply hardware overscan (typically 2% to 5%) to HDMI inputs by default, cutting off content along the screen perimeter.
+- **Solution**:
+  1. Open the Admin Dashboard (enter remote secret sequence `UP UP DOWN DOWN LEFT RIGHT LEFT RIGHT OK` $\to$ PIN).
+  2. Navigate down to Setting 4: **Display Margins (Overscan Protection)**.
+  3. Click **Configure Margins**.
+  4. Use the on-screen steppers to adjust Top, Bottom, Left, and Right margins independently (typically 3%–5% compensates for standard TV overscan).
+  5. The adjustment is previewed live on the TV screen.
+  6. Select **✓ Apply & Save** to persist the margin configuration across restarts.
+  7. If you ever connect the device to a monitor with 1:1 pixel mapping ("Just Scan" / "Fit to Screen"), click **↺ Reset (0%)** and **✓ Apply & Save**.
+
+### Symptom: Admin Panel opens at the bottom or focuses on Reload Content
+- **Cause**: In earlier versions, view initialization placed focus on the "Reload Live Content" button at the bottom of the card, causing the container to scroll down automatically.
+- **Solution**: Fixed in current release. Admin sessions now automatically reset scroll offset to `(0, 0)` and assign initial remote focus to the default launcher button at the top of the dashboard.
+
+### Symptom: Native Admin screens or PIN dialog clipped when display margins are configured
+- **Cause**: Fixed-width card containers (such as fixed `960dp` on `scrollDashboard`) overflowed the reduced available viewport when non-zero margins and base padding inset the parent root container, shifting content outside screen bounds, or unconstrained vertical stacks overflowed vertically.
+- **Solution**: Fixed in current release. All native dialogs and cards use responsive ConstraintLayout bounds (`android:layout_width="0dp"` with `app:layout_constrainedWidth="true"` and `app:layout_constraintWidth_max`), while `AdminPinDialog` incorporates a bounded `NestedScrollView` (`scrollPin`) with compact keypad button proportions (`68dp × 46dp`, `3dp` margins) so that all controls (all numeric keys, Clear, Delete, Cancel, Submit) fit comfortably and remain fully accessible without clipping across all supported display sizes, asymmetric margins, and densities.
+
+
